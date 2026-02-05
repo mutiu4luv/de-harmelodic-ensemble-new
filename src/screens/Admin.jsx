@@ -143,10 +143,9 @@ const AdminDashboardContent = () => {
   const [loading, setLoading] = useState(true);
 
   const [attendance, setAttendance] = useState({});
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
   const today = new Date().toISOString().split("T")[0];
   const [myAttendance, setMyAttendance] = useState([]);
-
-  const [loadingAttendance, setLoadingAttendance] = useState(false);
 
   const [contribution, setContribution] = useState({
     memberId: "",
@@ -254,23 +253,27 @@ const AdminDashboardContent = () => {
         <h2 style={styles.logo}>Harmy Admin</h2>
 
         <ul style={styles.menu}>
-          {["Dashboard", "Members", "Mark Attendance", "Contributions"].map(
-            (item) => (
-              <li
-                key={item}
-                onClick={() => {
-                  setActiveView(item);
-                  if (isMobile) setSidebarOpen(false);
-                }}
-                style={{
-                  ...styles.menuItem,
-                  ...(activeView === item ? styles.active : {}),
-                }}
-              >
-                {item}
-              </li>
-            )
-          )}
+          {[
+            "Dashboard",
+            "Members",
+            "Take Attendance", // ADMIN ONLY
+            "My Attendance", // MEMBER VIEW
+            "Contributions",
+          ].map((item) => (
+            <li
+              key={item}
+              onClick={() => {
+                setActiveView(item);
+                if (isMobile) setSidebarOpen(false);
+              }}
+              style={{
+                ...styles.menuItem,
+                ...(activeView === item ? styles.active : {}),
+              }}
+            >
+              {item}
+            </li>
+          ))}
 
           <li onClick={handleLogout} style={styles.logout}>
             Logout
@@ -314,11 +317,11 @@ const AdminDashboardContent = () => {
             )}
           </section>
         )}
-        {activeView === "Attendance" && (
+        {activeView === "Take Attendance" && (
           <Card sx={{ maxWidth: 600, mx: "auto" }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>
-                Attendance — {today}
+                Take Attendance — {today}
               </Typography>
 
               {members.map((m) => (
@@ -348,13 +351,11 @@ const AdminDashboardContent = () => {
                   try {
                     setLoadingAttendance(true);
 
-                    // Prepare attendance data for backend
                     const records = members.map((m) => ({
                       memberId: m._id,
                       present: !!attendance[m._id],
                     }));
 
-                    // Send to backend
                     await axios.post(`${API_BASE}/api/admin/attendance`, {
                       date: today,
                       records,
@@ -364,14 +365,14 @@ const AdminDashboardContent = () => {
                       variant: "success",
                     });
 
-                    window.location.reload(); // reload page to refresh data
+                    setAttendance({}); // clear after save
                   } catch (err) {
                     console.error(err);
                     enqueueSnackbar("Failed to save attendance", {
                       variant: "error",
                     });
                   } finally {
-                    setLoadingAttendance(false); // stop loader
+                    setLoadingAttendance(false);
                   }
                 }}
               >
@@ -381,18 +382,17 @@ const AdminDashboardContent = () => {
           </Card>
         )}
 
-        {activeView === "Mark Attendance" && (
+        {activeView === "My Attendance" && (
           <Card sx={{ maxWidth: 600, mx: "auto", mt: 4 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>
-                My Rehearsals Attendance
+                My Rehearsal Attendance
               </Typography>
 
               {myAttendance.length === 0 ? (
                 <Typography>No attendance records yet.</Typography>
               ) : (
                 myAttendance.map((a) => {
-                  // Format date to DD/MM/YYYY
                   const formattedDate = new Date(a.date).toLocaleDateString(
                     "en-GB"
                   );
