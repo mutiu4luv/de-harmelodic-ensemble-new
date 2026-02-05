@@ -144,6 +144,7 @@ const AdminDashboardContent = () => {
 
   const [attendance, setAttendance] = useState({});
   const today = new Date().toISOString().split("T")[0];
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
 
   const [contribution, setContribution] = useState({
     memberId: "",
@@ -290,19 +291,68 @@ const AdminDashboardContent = () => {
             )}
           </section>
         )}
-
         {activeView === "Attendance" && (
-          <Card sx={{ maxWidth: 500, mx: "auto" }}>
+          <Card sx={{ maxWidth: 600, mx: "auto" }}>
             <CardContent>
-              <Typography variant="h6">Attendance — {today}</Typography>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Attendance — {today}
+              </Typography>
+
               {members.map((m) => (
-                <Box key={m._id} sx={{ display: "flex", alignItems: "center" }}>
-                  <Checkbox />
+                <Box
+                  key={m._id}
+                  sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                >
+                  <Checkbox
+                    checked={!!attendance[m._id]}
+                    onChange={(e) =>
+                      setAttendance((prev) => ({
+                        ...prev,
+                        [m._id]: e.target.checked,
+                      }))
+                    }
+                  />
                   <Typography>{m.name}</Typography>
                 </Box>
               ))}
-              <Button fullWidth variant="contained" sx={{ mt: 2 }}>
-                Save Attendance
+
+              <Button
+                fullWidth
+                variant="contained"
+                sx={{ mt: 2 }}
+                disabled={loadingAttendance}
+                onClick={async () => {
+                  try {
+                    setLoadingAttendance(true);
+
+                    // Prepare attendance data for backend
+                    const records = members.map((m) => ({
+                      memberId: m._id,
+                      present: !!attendance[m._id],
+                    }));
+
+                    // Send to backend
+                    await axios.post(`${API_BASE}/api/admin/attendance`, {
+                      date: today,
+                      records,
+                    });
+
+                    enqueueSnackbar("Attendance saved successfully", {
+                      variant: "success",
+                    });
+
+                    window.location.reload(); // reload page to refresh data
+                  } catch (err) {
+                    console.error(err);
+                    enqueueSnackbar("Failed to save attendance", {
+                      variant: "error",
+                    });
+                  } finally {
+                    setLoadingAttendance(false); // stop loader
+                  }
+                }}
+              >
+                {loadingAttendance ? "Saving..." : "Save Attendance"}
               </Button>
             </CardContent>
           </Card>

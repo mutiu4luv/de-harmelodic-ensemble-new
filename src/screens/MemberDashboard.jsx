@@ -1,4 +1,6 @@
+import { Card, CardContent, Typography } from "@mui/material";
 import axios from "axios";
+import { enqueueSnackbar } from "notistack";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -12,6 +14,7 @@ const MemberDashboard = () => {
   const [activeView, setActiveView] = useState("Dashboard");
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [attendance, setAttendance] = useState([]);
 
   const API_BASE =
     import.meta.env.VITE_API_BASE || "https://harme-backend.onrender.com";
@@ -30,6 +33,26 @@ const MemberDashboard = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      try {
+        const memberId = user._id;
+        if (!memberId) return;
+
+        const res = await axios.get(
+          `${API_BASE}/api/attendance/my/${memberId}`
+        );
+        setAttendance(res.data.attendance || []);
+        console.log("Attendance fetched:", res.data.attendance);
+      } catch (err) {
+        console.error("Failed to fetch attendance:", err);
+        enqueueSnackbar("Failed to fetch attendance", { variant: "error" });
+      }
+    };
+
+    fetchAttendance();
+  }, [user._id]);
 
   /* =========================
      FETCH MEMBERS
@@ -186,6 +209,35 @@ const MemberDashboard = () => {
               </div>
             )}
           </section>
+        )}
+
+        {activeView === "Attendance" && (
+          <Card sx={{ maxWidth: 600, mx: "auto", mt: 4 }}>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                My Rehearsals Attendance
+              </Typography>
+              {attendance.length === 0 ? (
+                <Typography>No attendance records yet.</Typography>
+              ) : (
+                attendance.map((a) => (
+                  <Box
+                    key={a._id}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mb: 1,
+                    }}
+                  >
+                    <Typography>{a.date}</Typography>
+                    <Typography>
+                      {a.present ? "Present ✅" : "Absent ❌"}
+                    </Typography>
+                  </Box>
+                ))
+              )}
+            </CardContent>
+          </Card>
         )}
       </main>
 
