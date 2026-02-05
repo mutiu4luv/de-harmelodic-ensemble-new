@@ -150,6 +150,24 @@ const AdminDashboardContent = () => {
     amount: "",
     purpose: "",
   });
+  // update role function
+  const updateRole = async (userId, role) => {
+    try {
+      await axios.patch(`${API_BASE}/api/registrations/${userId}/role`, {
+        role,
+      });
+
+      enqueueSnackbar("Role updated successfully", {
+        variant: "success",
+      });
+
+      fetchMembers(); // refresh table
+    } catch (err) {
+      enqueueSnackbar("Failed to update role", {
+        variant: "error",
+      });
+    }
+  };
 
   /* RESPONSIVE */
   useEffect(() => {
@@ -267,7 +285,7 @@ const AdminDashboardContent = () => {
               <MembersTable
                 members={members}
                 fetchMembers={fetchMembers}
-                updateRole={() => {}}
+                updateRole={updateRole}
               />
             )}
           </section>
