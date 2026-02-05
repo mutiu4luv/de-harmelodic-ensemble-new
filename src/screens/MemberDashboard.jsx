@@ -237,53 +237,41 @@ const MemberDashboard = () => {
         {activeView === "Dashboard" && (
           <>
             <div style={styles.cards}>
-              <div style={styles.card}>
+              <div style={{ ...styles.card, ...styles.cardPrimary }}>
                 <p style={styles.cardTitle}>Total Members</p>
                 <h2 style={styles.cardValue}>{members.length}</h2>
               </div>
 
-              <div style={styles.card}>
+              <div style={{ ...styles.card, ...styles.cardSuccess }}>
                 <p style={styles.cardTitle}>Attendance Rate</p>
-                <h2 style={{ ...styles.cardValue, color: "#10b981" }}>
-                  {attendanceRate}
-                </h2>
+                <h2 style={styles.cardValue}>{attendanceRate}</h2>
               </div>
 
-              <div style={styles.card}>
+              <div style={{ ...styles.card, ...styles.cardAccent }}>
                 <p style={styles.cardTitle}>This Month Attendance</p>
-                <h2 style={{ ...styles.cardValue, color: "#8b5cf6" }}>
-                  {currentMonthAttendance}
-                </h2>
+                <h2 style={styles.cardValue}>{currentMonthAttendance}</h2>
               </div>
 
-              <div style={styles.card}>
+              <div style={{ ...styles.card, ...styles.cardInfo }}>
                 <p style={styles.cardTitle}>Total Contributions</p>
-                <h2 style={{ ...styles.cardValue, color: "#3b82f6" }}>
+                <h2 style={styles.cardValue}>
                   ₦{totalContribution.toLocaleString()}
                 </h2>
               </div>
             </div>
 
             {/* MONTHLY SUMMARY */}
-            <div style={{ marginTop: 30 }}>
-              <h3 style={{ marginBottom: 10 }}>Monthly Attendance Summary</h3>
-
+            <div style={styles.monthlySummaryWrapper}>
+              <h3 style={styles.monthlySummaryTitle}>
+                Monthly Attendance Summary
+              </h3>
               {Object.entries(monthlyAttendanceSummary).map(([month, data]) => (
-                <div
-                  key={month}
-                  style={{
-                    background: "#f9fafb",
-                    padding: 12,
-                    borderRadius: 8,
-                    marginBottom: 10,
-                    display: "flex",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <strong>{month}</strong>
-                  <span>
-                    Present: {data.present} | Absent: {data.absent} | Total:{" "}
-                    {data.total}
+                <div key={month} style={styles.monthSummaryCard}>
+                  <strong style={styles.monthSummaryMonth}>{month}</strong>
+                  <span style={styles.monthSummaryStats}>
+                    <span style={styles.present}>Present: {data.present}</span>
+                    <span style={styles.absent}>Absent: {data.absent}</span>
+                    <span style={styles.total}>Total: {data.total}</span>
                   </span>
                 </div>
               ))}
@@ -377,6 +365,90 @@ const MemberDashboard = () => {
    STYLES
 ========================= */
 const styles = {
+  cards: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+    gap: "1.5rem",
+    marginBottom: "2rem",
+  },
+  card: {
+    background: "linear-gradient(135deg, #232946 60%, #121629 100%)",
+    color: "#fff",
+    padding: "1.75rem 1.25rem",
+    borderRadius: 18,
+    boxShadow: "0 4px 24px rgba(35,41,70,0.10)",
+    transition: "transform 0.15s, box-shadow 0.15s",
+    cursor: "pointer",
+    position: "relative",
+    overflow: "hidden",
+  },
+  cardPrimary: {
+    background: "linear-gradient(135deg, #232946 60%, #3e497a 100%)",
+    borderLeft: "6px solid #f4d160",
+  },
+  cardSuccess: {
+    background: "linear-gradient(135deg, #232946 60%, #10b981 100%)",
+    borderLeft: "6px solid #10b981",
+  },
+  cardAccent: {
+    background: "linear-gradient(135deg, #232946 60%, #8b5cf6 100%)",
+    borderLeft: "6px solid #8b5cf6",
+  },
+  cardInfo: {
+    background: "linear-gradient(135deg, #232946 60%, #3b82f6 100%)",
+    borderLeft: "6px solid #3b82f6",
+  },
+  cardTitle: {
+    fontSize: "0.85rem",
+    color: "#c7c9d9",
+    marginBottom: 8,
+    fontWeight: 500,
+    letterSpacing: 0.5,
+  },
+  cardValue: {
+    fontSize: "2.1rem",
+    fontWeight: 700,
+    color: "#fff",
+    letterSpacing: 1,
+    margin: 0,
+  },
+  monthlySummaryWrapper: {
+    marginTop: 36,
+    background: "#232946",
+    borderRadius: 16,
+    padding: "1.5rem 1rem",
+    boxShadow: "0 2px 12px rgba(35,41,70,0.08)",
+  },
+  monthlySummaryTitle: {
+    marginBottom: 18,
+    color: "#f4d160",
+    fontWeight: 700,
+    fontSize: "1.1rem",
+    letterSpacing: 0.5,
+  },
+  monthSummaryCard: {
+    background: "rgba(255,255,255,0.04)",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 12,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    boxShadow: "0 1px 4px rgba(35,41,70,0.04)",
+  },
+  monthSummaryMonth: {
+    color: "#f4d160",
+    fontWeight: 600,
+    fontSize: "1rem",
+  },
+  monthSummaryStats: {
+    display: "flex",
+    gap: 18,
+    fontSize: "0.98rem",
+  },
+  present: { color: "#10b981", fontWeight: 500 },
+  absent: { color: "#ef4444", fontWeight: 500 },
+  total: { color: "#8b5cf6", fontWeight: 500 },
   container: {
     display: "flex",
     minHeight: "100vh",

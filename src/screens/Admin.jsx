@@ -333,44 +333,38 @@ const AdminDashboardContent = () => {
             <h1 style={styles.title}>Dashboard Overview</h1>
 
             <div style={styles.cards}>
-              <div style={styles.card}>
-                <p>Total Members</p>
-                <h2>{members.length}</h2>
+              <div style={{ ...styles.card, ...styles.cardPrimary }}>
+                <p style={styles.cardTitle}>Total Members</p>
+                <h2 style={styles.cardValue}>{members.length}</h2>
               </div>
 
-              <div style={styles.card}>
-                <p>Attendance Rate</p>
-                <h2>{overallAttendanceRate}</h2>
+              <div style={{ ...styles.card, ...styles.cardSuccess }}>
+                <p style={styles.cardTitle}>Attendance Rate</p>
+                <h2 style={styles.cardValue}>{overallAttendanceRate}</h2>
               </div>
 
-              <div style={styles.card}>
-                <p>Total Attendance Records</p>
-                <h2>{myAttendance.length}</h2>
+              <div style={{ ...styles.card, ...styles.cardAccent }}>
+                <p style={styles.cardTitle}>Total Attendance Records</p>
+                <h2 style={styles.cardValue}>{myAttendance.length}</h2>
               </div>
             </div>
 
             {/* MONTHLY SUMMARY */}
-            <div style={{ marginTop: 30 }}>
-              <h2>Monthly Attendance Summary</h2>
-
+            <div style={styles.monthlySummaryWrapper}>
+              <h2 style={styles.monthlySummaryTitle}>
+                Monthly Attendance Summary
+              </h2>
               {monthlySummary.length === 0 ? (
-                <p>No attendance data yet</p>
+                <p style={styles.noData}>No attendance data yet</p>
               ) : (
                 monthlySummary.map((m) => (
-                  <div
-                    key={m.month}
-                    style={{
-                      padding: 12,
-                      border: "1px solid #ddd",
-                      borderRadius: 8,
-                      marginBottom: 10,
-                    }}
-                  >
-                    <strong>{m.month}</strong>
-                    <p>
-                      Present: {m.present} / {m.total}
-                    </p>
-                    <p>Attendance Rate: {m.rate}%</p>
+                  <div key={m.month} style={styles.monthSummaryCard}>
+                    <strong style={styles.monthSummaryMonth}>{m.month}</strong>
+                    <span style={styles.monthSummaryStats}>
+                      <span style={styles.present}>Present: {m.present}</span>
+                      <span style={styles.total}>Total: {m.total}</span>
+                      <span style={styles.rate}>Rate: {m.rate}%</span>
+                    </span>
                   </div>
                 ))
               )}
@@ -538,6 +532,11 @@ const AdminDashboardContent = () => {
    STYLES
 ========================= */
 const styles = {
+  section: {
+    background: "#fff",
+    padding: "1rem",
+    borderRadius: 8,
+  },
   container: { display: "flex", minHeight: "100vh", background: "#f8fafc" },
   mobileTopBar: {
     position: "fixed",
@@ -600,6 +599,87 @@ const styles = {
     padding: "1rem",
     borderRadius: 8,
   },
+  cards: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+    gap: "1.5rem",
+    marginBottom: "2rem",
+  },
+  card: {
+    background: "linear-gradient(135deg, #232946 60%, #121629 100%)",
+    color: "#fff",
+    padding: "1.75rem 1.25rem",
+    borderRadius: 18,
+    boxShadow: "0 4px 24px rgba(35,41,70,0.10)",
+    transition: "transform 0.15s, box-shadow 0.15s",
+    cursor: "pointer",
+    position: "relative",
+    overflow: "hidden",
+  },
+  cardPrimary: {
+    background: "linear-gradient(135deg, #232946 60%, #3e497a 100%)",
+    borderLeft: "6px solid #f4d160",
+  },
+  cardSuccess: {
+    background: "linear-gradient(135deg, #232946 60%, #10b981 100%)",
+    borderLeft: "6px solid #10b981",
+  },
+  cardAccent: {
+    background: "linear-gradient(135deg, #232946 60%, #8b5cf6 100%)",
+    borderLeft: "6px solid #8b5cf6",
+  },
+  cardTitle: {
+    fontSize: "0.85rem",
+    color: "#c7c9d9",
+    marginBottom: 8,
+    fontWeight: 500,
+    letterSpacing: 0.5,
+  },
+  cardValue: {
+    fontSize: "2.1rem",
+    fontWeight: 700,
+    color: "#fff",
+    letterSpacing: 1,
+    margin: 0,
+  },
+  monthlySummaryWrapper: {
+    marginTop: 36,
+    background: "#232946",
+    borderRadius: 16,
+    padding: "1.5rem 1rem",
+    boxShadow: "0 2px 12px rgba(35,41,70,0.08)",
+  },
+  monthlySummaryTitle: {
+    marginBottom: 18,
+    color: "#f4d160",
+    fontWeight: 700,
+    fontSize: "1.1rem",
+    letterSpacing: 0.5,
+  },
+  monthSummaryCard: {
+    background: "rgba(255,255,255,0.04)",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 12,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    boxShadow: "0 1px 4px rgba(35,41,70,0.04)",
+  },
+  monthSummaryMonth: {
+    color: "#f4d160",
+    fontWeight: 600,
+    fontSize: "1rem",
+  },
+  monthSummaryStats: {
+    display: "flex",
+    gap: 18,
+    fontSize: "0.98rem",
+  },
+  present: { color: "#10b981", fontWeight: 500 },
+  total: { color: "#8b5cf6", fontWeight: 500 },
+  rate: { color: "#3b82f6", fontWeight: 500 },
+  noData: { color: "#c7c9d9", fontStyle: "italic" },
 };
 
 export default function AdminDashboard() {
