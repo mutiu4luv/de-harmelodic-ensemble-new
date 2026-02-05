@@ -15,9 +15,45 @@ const MemberDashboard = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [attendance, setAttendance] = useState([]);
+  const [totalContribution, setTotalContribution] = useState(0);
 
   const API_BASE =
     import.meta.env.VITE_API_BASE || "https://harme-backend.onrender.com";
+
+  const attendanceRate = (() => {
+    if (!attendance.length) return "—";
+
+    const presentCount = attendance.filter((a) => a.present).length;
+
+    return `${Math.round((presentCount / attendance.length) * 100)}%`;
+  })();
+
+  useEffect(() => {
+    const fetchContributions = async () => {
+      try {
+        const memberId = user?.id;
+        if (!memberId) return;
+
+        const res = await axios.get(
+          `${API_BASE}/api/admin/contributions/member/${memberId}`
+        );
+
+        const total = res.data.contributions.reduce(
+          (sum, c) => sum + c.amount,
+          0
+        );
+
+        setTotalContribution(total);
+      } catch (err) {
+        console.error("Failed to fetch contributions:", err);
+        enqueueSnackbar("Failed to fetch contributions", {
+          variant: "error",
+        });
+      }
+    };
+
+    fetchContributions();
+  }, [user]);
 
   /* =========================
      RESPONSIVE HANDLING
@@ -164,14 +200,18 @@ const MemberDashboard = () => {
               <p style={styles.cardTitle}>Total Members</p>
               <h2 style={styles.cardValue}>{members.length}</h2>
             </div>
+
             <div style={styles.card}>
               <p style={styles.cardTitle}>Attendance Rate</p>
-              <h2 style={{ ...styles.cardValue, color: "#10b981" }}>85%</h2>
+              <h2 style={{ ...styles.cardValue, color: "#10b981" }}>
+                {attendanceRate}
+              </h2>
             </div>
+
             <div style={styles.card}>
               <p style={styles.cardTitle}>Total Contributions</p>
               <h2 style={{ ...styles.cardValue, color: "#3b82f6" }}>
-                ₦450,000
+                ₦{totalContribution.toLocaleString()}
               </h2>
             </div>
           </div>
