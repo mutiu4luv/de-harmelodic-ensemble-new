@@ -25,6 +25,10 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import { SnackbarProvider, useSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE || "https://harme-backend.onrender.com";
@@ -144,8 +148,9 @@ const AdminDashboardContent = () => {
 
   const [attendance, setAttendance] = useState({});
   const [loadingAttendance, setLoadingAttendance] = useState(false);
-  const today = new Date().toISOString().split("T")[0];
+  const [attendanceDate, setAttendanceDate] = useState(dayjs());
   const [myAttendance, setMyAttendance] = useState([]);
+  const [monthlySummary, setMonthlySummary] = useState([]);
 
   const [contribution, setContribution] = useState({
     memberId: "",
@@ -206,15 +211,11 @@ const AdminDashboardContent = () => {
   useEffect(() => {
     const fetchAttendance = async () => {
       try {
-        // console.log("User from localStorage:", user);
-        const memberId = user.id;
-        if (!memberId) {
-          console.warn("No memberId found, skipping fetch");
-          return;
-        }
+        const memberId = user?.id;
+        if (!memberId) return;
 
         const res = await axios.get(`${API_BASE}/api/admin/my/${memberId}`);
-        // console.log("Attendance fetched:", res.data.attendance);
+
         setMyAttendance(res.data.attendance || []);
       } catch (err) {
         console.error("Failed to fetch attendance:", err);
@@ -224,6 +225,50 @@ const AdminDashboardContent = () => {
 
     fetchAttendance();
   }, [user]);
+  useEffect(() => {
+    if (!myAttendance.length) {
+      setMonthlySummary([]);
+      return;
+    }
+
+    const summaryMap = {};
+
+    myAttendance.forEach((record) => {
+      const date = new Date(record.date);
+
+      const monthKey = date.toLocaleString("en-US", {
+        month: "long",
+        year: "numeric",
+      }); // e.g. "February 2026"
+
+      if (!summaryMap[monthKey]) {
+        summaryMap[monthKey] = {
+          month: monthKey,
+          total: 0,
+          present: 0,
+        };
+      }
+
+      summaryMap[monthKey].total += 1;
+      if (record.present) {
+        summaryMap[monthKey].present += 1;
+      }
+    });
+
+    const summaryArray = Object.values(summaryMap).map((m) => ({
+      ...m,
+      rate: Math.round((m.present / m.total) * 100),
+    }));
+
+    setMonthlySummary(summaryArray);
+  }, [myAttendance]);
+
+  const overallAttendanceRate = (() => {
+    if (!myAttendance.length) return "—";
+
+    const presentDays = myAttendance.filter((a) => a.present).length;
+    return `${Math.round((presentDays / myAttendance.length) * 100)}%`;
+  })();
 
   return (
     <div style={styles.container}>
@@ -286,19 +331,49 @@ const AdminDashboardContent = () => {
         {activeView === "Dashboard" && (
           <>
             <h1 style={styles.title}>Dashboard Overview</h1>
+
             <div style={styles.cards}>
               <div style={styles.card}>
                 <p>Total Members</p>
                 <h2>{members.length}</h2>
               </div>
+
               <div style={styles.card}>
                 <p>Attendance Rate</p>
-                <h2>—</h2>
+                <h2>{overallAttendanceRate}</h2>
               </div>
+
               <div style={styles.card}>
-                <p>Total Contributions</p>
-                <h2>—</h2>
+                <p>Total Attendance Records</p>
+                <h2>{myAttendance.length}</h2>
               </div>
+            </div>
+
+            {/* MONTHLY SUMMARY */}
+            <div style={{ marginTop: 30 }}>
+              <h2>Monthly Attendance Summary</h2>
+
+              {monthlySummary.length === 0 ? (
+                <p>No attendance data yet</p>
+              ) : (
+                monthlySummary.map((m) => (
+                  <div
+                    key={m.month}
+                    style={{
+                      padding: 12,
+                      border: "1px solid #ddd",
+                      borderRadius: 8,
+                      marginBottom: 10,
+                    }}
+                  >
+                    <strong>{m.month}</strong>
+                    <p>
+                      Present: {m.present} / {m.total}
+                    </p>
+                    <p>Attendance Rate: {m.rate}%</p>
+                  </div>
+                ))
+              )}
             </div>
           </>
         )}
@@ -321,9 +396,26 @@ const AdminDashboardContent = () => {
           <Card sx={{ maxWidth: 600, mx: "auto" }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>
-                Take Attendance — {today}
+                Take Attendance
               </Typography>
 
+              {/* DATE PICKER */}
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="Attendance Date"
+                  value={attendanceDate}
+                  onChange={(newValue) => setAttendanceDate(newValue)}
+                  disableFuture
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      sx: { mb: 2 },
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+
+              {/* MEMBERS LIST */}
               {members.map((m) => (
                 <Box
                   key={m._id}
@@ -357,7 +449,7 @@ const AdminDashboardContent = () => {
                     }));
 
                     await axios.post(`${API_BASE}/api/admin/attendance`, {
-                      date: today,
+                      date: attendanceDate.format("YYYY-MM-DD"),
                       records,
                     });
 
@@ -365,7 +457,7 @@ const AdminDashboardContent = () => {
                       variant: "success",
                     });
 
-                    setAttendance({}); // clear after save
+                    setAttendance({});
                   } catch (err) {
                     console.error(err);
                     enqueueSnackbar("Failed to save attendance", {
