@@ -1,4 +1,4 @@
-import { Card, CardContent, Typography } from "@mui/material";
+import { Box, Card, CardContent, Typography } from "@mui/material";
 import axios from "axios";
 import { enqueueSnackbar } from "notistack";
 import React, { useState, useEffect } from "react";
@@ -33,18 +33,20 @@ const MemberDashboard = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
+  // get attendance for the logged in user
   useEffect(() => {
     const fetchAttendance = async () => {
       try {
-        const memberId = user._id;
-        if (!memberId) return;
+        // console.log("User from localStorage:", user);
+        const memberId = user.id;
+        if (!memberId) {
+          console.warn("No memberId found, skipping fetch");
+          return;
+        }
 
-        const res = await axios.get(
-          `${API_BASE}/api/attendance/my/${memberId}`
-        );
+        const res = await axios.get(`${API_BASE}/api/admin/my/${memberId}`);
+        // console.log("Attendance fetched:", res.data.attendance);
         setAttendance(res.data.attendance || []);
-        console.log("Attendance fetched:", res.data.attendance);
       } catch (err) {
         console.error("Failed to fetch attendance:", err);
         enqueueSnackbar("Failed to fetch attendance", { variant: "error" });
@@ -52,7 +54,7 @@ const MemberDashboard = () => {
     };
 
     fetchAttendance();
-  }, [user._id]);
+  }, [user]);
 
   /* =========================
      FETCH MEMBERS
@@ -217,24 +219,32 @@ const MemberDashboard = () => {
               <Typography variant="h6" sx={{ mb: 2 }}>
                 My Rehearsals Attendance
               </Typography>
+
               {attendance.length === 0 ? (
                 <Typography>No attendance records yet.</Typography>
               ) : (
-                attendance.map((a) => (
-                  <Box
-                    key={a._id}
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      mb: 1,
-                    }}
-                  >
-                    <Typography>{a.date}</Typography>
-                    <Typography>
-                      {a.present ? "Present ✅" : "Absent ❌"}
-                    </Typography>
-                  </Box>
-                ))
+                attendance.map((a) => {
+                  // Format date to DD/MM/YYYY
+                  const formattedDate = new Date(a.date).toLocaleDateString(
+                    "en-GB"
+                  );
+
+                  return (
+                    <Box
+                      key={a._id}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mb: 1,
+                      }}
+                    >
+                      <Typography>{formattedDate}</Typography>
+                      <Typography>
+                        {a.present ? "Present ✅" : "Absent ❌"}
+                      </Typography>
+                    </Box>
+                  );
+                })
               )}
             </CardContent>
           </Card>

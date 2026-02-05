@@ -144,6 +144,8 @@ const AdminDashboardContent = () => {
 
   const [attendance, setAttendance] = useState({});
   const today = new Date().toISOString().split("T")[0];
+  const [myAttendance, setMyAttendance] = useState([]);
+
   const [loadingAttendance, setLoadingAttendance] = useState(false);
 
   const [contribution, setContribution] = useState({
@@ -202,6 +204,27 @@ const AdminDashboardContent = () => {
     enqueueSnackbar("Logged out successfully", { variant: "success" });
     navigate("/login", { replace: true });
   };
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      try {
+        // console.log("User from localStorage:", user);
+        const memberId = user.id;
+        if (!memberId) {
+          console.warn("No memberId found, skipping fetch");
+          return;
+        }
+
+        const res = await axios.get(`${API_BASE}/api/admin/my/${memberId}`);
+        // console.log("Attendance fetched:", res.data.attendance);
+        setMyAttendance(res.data.attendance || []);
+      } catch (err) {
+        console.error("Failed to fetch attendance:", err);
+        enqueueSnackbar("Failed to fetch attendance", { variant: "error" });
+      }
+    };
+
+    fetchAttendance();
+  }, [user]);
 
   return (
     <div style={styles.container}>
@@ -231,7 +254,7 @@ const AdminDashboardContent = () => {
         <h2 style={styles.logo}>Harmy Admin</h2>
 
         <ul style={styles.menu}>
-          {["Dashboard", "Members", "Attendance", "Contributions"].map(
+          {["Dashboard", "Members", "Mark Attendance", "Contributions"].map(
             (item) => (
               <li
                 key={item}
@@ -354,6 +377,43 @@ const AdminDashboardContent = () => {
               >
                 {loadingAttendance ? "Saving..." : "Save Attendance"}
               </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeView === "Mark Attendance" && (
+          <Card sx={{ maxWidth: 600, mx: "auto", mt: 4 }}>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                My Rehearsals Attendance
+              </Typography>
+
+              {myAttendance.length === 0 ? (
+                <Typography>No attendance records yet.</Typography>
+              ) : (
+                myAttendance.map((a) => {
+                  // Format date to DD/MM/YYYY
+                  const formattedDate = new Date(a.date).toLocaleDateString(
+                    "en-GB"
+                  );
+
+                  return (
+                    <Box
+                      key={a._id}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mb: 1,
+                      }}
+                    >
+                      <Typography>{formattedDate}</Typography>
+                      <Typography>
+                        {a.present ? "Present ✅" : "Absent ❌"}
+                      </Typography>
+                    </Box>
+                  );
+                })
+              )}
             </CardContent>
           </Card>
         )}
