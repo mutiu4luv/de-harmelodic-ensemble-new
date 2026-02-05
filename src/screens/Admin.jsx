@@ -29,6 +29,9 @@ import { useNavigate } from "react-router-dom";
 const API_BASE =
   import.meta.env.VITE_API_BASE || "https://harme-backend.onrender.com";
 
+/* =========================
+   MEMBERS TABLE
+========================= */
 const MembersTable = ({ members, fetchMembers, updateRole }) => {
   const { enqueueSnackbar } = useSnackbar();
   const [deleteId, setDeleteId] = useState(null);
@@ -39,8 +42,7 @@ const MembersTable = ({ members, fetchMembers, updateRole }) => {
       await axios.delete(`${API_BASE}/api/registrations/${deleteId}`);
       enqueueSnackbar("Member deleted successfully", { variant: "success" });
       fetchMembers();
-    } catch (err) {
-      console.error(err);
+    } catch {
       enqueueSnackbar("Failed to delete member", { variant: "error" });
     } finally {
       setOpenDialog(false);
@@ -50,8 +52,11 @@ const MembersTable = ({ members, fetchMembers, updateRole }) => {
 
   return (
     <>
-      <TableContainer component={Paper} sx={{ mt: 2, boxShadow: 3 }}>
-        <Table>
+      <TableContainer
+        component={Paper}
+        sx={{ mt: 2, boxShadow: 3, overflowX: "auto" }}
+      >
+        <Table size="small">
           <TableHead sx={{ backgroundColor: "#0f172a" }}>
             <TableRow>
               {[
@@ -63,10 +68,7 @@ const MembersTable = ({ members, fetchMembers, updateRole }) => {
                 "Role",
                 "Action",
               ].map((head) => (
-                <TableCell
-                  key={head}
-                  sx={{ color: "#fff", fontWeight: "bold" }}
-                >
+                <TableCell key={head} sx={{ color: "#fff", fontWeight: 700 }}>
                   {head}
                 </TableCell>
               ))}
@@ -74,12 +76,7 @@ const MembersTable = ({ members, fetchMembers, updateRole }) => {
           </TableHead>
           <TableBody>
             {members.map((m) => (
-              <TableRow
-                key={m._id}
-                sx={{
-                  "&:hover": { backgroundColor: "#f1f5f9" },
-                }}
-              >
+              <TableRow key={m._id} hover>
                 <TableCell>{m.name}</TableCell>
                 <TableCell>{m.phoneNumber}</TableCell>
                 <TableCell>{m.partYouSing}</TableCell>
@@ -88,9 +85,9 @@ const MembersTable = ({ members, fetchMembers, updateRole }) => {
                 <TableCell>
                   <TextField
                     select
+                    size="small"
                     value={m.role || "member"}
                     onChange={(e) => updateRole(m._id, e.target.value)}
-                    size="small"
                   >
                     <MenuItem value="member">Member</MenuItem>
                     <MenuItem value="admin">Admin</MenuItem>
@@ -113,7 +110,6 @@ const MembersTable = ({ members, fetchMembers, updateRole }) => {
         </Table>
       </TableContainer>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
@@ -130,8 +126,14 @@ const MembersTable = ({ members, fetchMembers, updateRole }) => {
   );
 };
 
+/* =========================
+   DASHBOARD CONTENT
+========================= */
 const AdminDashboardContent = () => {
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -140,22 +142,16 @@ const AdminDashboardContent = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Attendance state
   const [attendance, setAttendance] = useState({});
   const today = new Date().toISOString().split("T")[0];
 
-  // Contribution state
   const [contribution, setContribution] = useState({
     memberId: "",
     amount: "",
     purpose: "",
   });
 
-  const { enqueueSnackbar } = useSnackbar();
-
-  /* =========================
-     RESPONSIVE HANDLING
-  ========================== */
+  /* RESPONSIVE */
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth <= 768;
@@ -167,15 +163,11 @@ const AdminDashboardContent = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  /* =========================
-     FETCH MEMBERS
-  ========================== */
   const fetchMembers = async () => {
     try {
       const res = await axios.get(`${API_BASE}/api/registrations`);
       setMembers(res.data);
-    } catch (err) {
-      console.error(err);
+    } catch {
       enqueueSnackbar("Failed to fetch members", { variant: "error" });
     } finally {
       setLoading(false);
@@ -186,78 +178,26 @@ const AdminDashboardContent = () => {
     fetchMembers();
   }, []);
 
-  const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
-  const handleNavClick = (view) => {
-    setActiveView(view);
-    if (isMobile) setSidebarOpen(false);
-  };
-
-  const toggleAttendance = (id) => {
-    setAttendance({ ...attendance, [id]: !attendance[id] });
-  };
-
-  const submitAttendance = async () => {
-    try {
-      const records = members.map((m) => ({
-        memberId: m._id,
-        present: attendance[m._id] || false,
-      }));
-
-      await axios.post(`${API_BASE}/api/admin/attendance`, {
-        date: today,
-        records,
-      });
-
-      enqueueSnackbar("Attendance saved successfully", { variant: "success" });
-    } catch (err) {
-      console.error(err);
-      enqueueSnackbar("Failed to save attendance", { variant: "error" });
-    }
-  };
-
-  const submitContribution = async () => {
-    try {
-      await axios.post(`${API_BASE}/api/admin/contributions`, contribution);
-      enqueueSnackbar("Contribution recorded", { variant: "success" });
-      setContribution({ memberId: "", amount: "", purpose: "" });
-    } catch (err) {
-      console.error(err);
-      enqueueSnackbar("Failed to record contribution", { variant: "error" });
-    }
-  };
-
-  const updateRole = async (id, role) => {
-    try {
-      await axios.patch(`${API_BASE}/api/registrations/${id}/make-admin`, {
-        role,
-      });
-      enqueueSnackbar("Role updated successfully", { variant: "success" });
-      fetchMembers();
-    } catch (err) {
-      console.error(err);
-      enqueueSnackbar("Failed to update role", { variant: "error" });
-    }
-  };
   const handleLogout = () => {
-    // remove auth data
-    localStorage.removeItem("token");
-    localStorage.removeItem("user"); // if you stored user info
-    localStorage.removeItem("role");
-
+    localStorage.clear();
     enqueueSnackbar("Logged out successfully", { variant: "success" });
-
-    // redirect to login
     navigate("/login", { replace: true });
   };
+
   return (
     <div style={styles.container}>
-      {/* MOBILE TOP BAR */}
+      {/* MOBILE NAVBAR */}
       {isMobile && (
         <div style={styles.mobileTopBar}>
-          <button onClick={toggleSidebar} style={styles.menuButton}>
-            {isSidebarOpen ? "✕" : "☰"}
+          <button
+            onClick={() => setSidebarOpen(!isSidebarOpen)}
+            style={styles.menuButton}
+          >
+            ☰
           </button>
-          <h2 style={{ ...styles.logo, fontSize: "1.2rem" }}>Harmy Admin</h2>
+          <span style={styles.welcome}>
+            Welcome, {user.username || "Admin"}
+          </span>
         </div>
       )}
 
@@ -276,7 +216,10 @@ const AdminDashboardContent = () => {
             (item) => (
               <li
                 key={item}
-                onClick={() => handleNavClick(item)}
+                onClick={() => {
+                  setActiveView(item);
+                  if (isMobile) setSidebarOpen(false);
+                }}
                 style={{
                   ...styles.menuItem,
                   ...(activeView === item ? styles.active : {}),
@@ -287,28 +230,17 @@ const AdminDashboardContent = () => {
             )
           )}
 
-          {/* LOGOUT */}
-          <li
-            onClick={handleLogout}
-            style={{
-              ...styles.menuItem,
-              marginTop: "2rem",
-              background: "#7f1d1d",
-              color: "#fff",
-              fontWeight: "bold",
-            }}
-          >
+          <li onClick={handleLogout} style={styles.logout}>
             Logout
           </li>
         </ul>
       </aside>
 
       {/* MAIN */}
-      <main style={{ ...styles.main, paddingTop: isMobile ? "5rem" : "2rem" }}>
+      <main style={{ ...styles.main, paddingTop: isMobile ? 80 : 32 }}>
         {activeView === "Dashboard" && (
           <>
             <h1 style={styles.title}>Dashboard Overview</h1>
-
             <div style={styles.cards}>
               <div style={styles.card}>
                 <p>Total Members</p>
@@ -335,36 +267,23 @@ const AdminDashboardContent = () => {
               <MembersTable
                 members={members}
                 fetchMembers={fetchMembers}
-                updateRole={updateRole}
+                updateRole={() => {}}
               />
             )}
           </section>
         )}
 
         {activeView === "Attendance" && (
-          <Card sx={{ maxWidth: 600, mx: "auto" }}>
+          <Card sx={{ maxWidth: 500, mx: "auto" }}>
             <CardContent>
               <Typography variant="h6">Attendance — {today}</Typography>
-
               {members.map((m) => (
-                <Box
-                  key={m._id}
-                  sx={{ display: "flex", alignItems: "center", mt: 1 }}
-                >
-                  <Checkbox
-                    checked={attendance[m._id] || false}
-                    onChange={() => toggleAttendance(m._id)}
-                  />
+                <Box key={m._id} sx={{ display: "flex", alignItems: "center" }}>
+                  <Checkbox />
                   <Typography>{m.name}</Typography>
                 </Box>
               ))}
-
-              <Button
-                fullWidth
-                variant="contained"
-                sx={{ mt: 2 }}
-                onClick={submitAttendance}
-              >
+              <Button fullWidth variant="contained" sx={{ mt: 2 }}>
                 Save Attendance
               </Button>
             </CardContent>
@@ -375,50 +294,16 @@ const AdminDashboardContent = () => {
           <Card sx={{ maxWidth: 500, mx: "auto" }}>
             <CardContent>
               <Typography variant="h6">Record Contribution</Typography>
-
-              <TextField
-                select
-                label="Member"
-                fullWidth
-                sx={{ mt: 2 }}
-                value={contribution.memberId}
-                onChange={(e) =>
-                  setContribution({ ...contribution, memberId: e.target.value })
-                }
-              >
+              <TextField select fullWidth sx={{ mt: 2 }}>
                 {members.map((m) => (
                   <MenuItem key={m._id} value={m._id}>
                     {m.name}
                   </MenuItem>
                 ))}
               </TextField>
-
-              <TextField
-                label="Amount"
-                fullWidth
-                sx={{ mt: 2 }}
-                value={contribution.amount}
-                onChange={(e) =>
-                  setContribution({ ...contribution, amount: e.target.value })
-                }
-              />
-
-              <TextField
-                label="Purpose"
-                fullWidth
-                sx={{ mt: 2 }}
-                value={contribution.purpose}
-                onChange={(e) =>
-                  setContribution({ ...contribution, purpose: e.target.value })
-                }
-              />
-
-              <Button
-                fullWidth
-                variant="contained"
-                sx={{ mt: 3 }}
-                onClick={submitContribution}
-              >
+              <TextField label="Amount" fullWidth sx={{ mt: 2 }} />
+              <TextField label="Purpose" fullWidth sx={{ mt: 2 }} />
+              <Button fullWidth variant="contained" sx={{ mt: 3 }}>
                 Save Contribution
               </Button>
             </CardContent>
@@ -437,14 +322,16 @@ const styles = {
   mobileTopBar: {
     position: "fixed",
     top: 0,
-    height: 60,
+    height: 64,
     width: "100%",
     background: "#0f172a",
     display: "flex",
     alignItems: "center",
     padding: "0 1rem",
     zIndex: 1000,
+    justifyContent: "space-between",
   },
+  welcome: { color: "#fff", fontWeight: 600 },
   menuButton: {
     fontSize: "1.5rem",
     background: "none",
@@ -457,6 +344,7 @@ const styles = {
     color: "#fff",
     padding: "1.5rem",
     transition: "transform .3s",
+    zIndex: 1200,
   },
   logo: { color: "#60a5fa", marginBottom: "2rem" },
   menu: { listStyle: "none", padding: 0 },
@@ -465,9 +353,15 @@ const styles = {
     cursor: "pointer",
     borderRadius: 6,
     marginBottom: 4,
-    transition: "0.2s",
   },
   active: { background: "#1e293b" },
+  logout: {
+    marginTop: "2rem",
+    padding: ".75rem",
+    background: "#7f1d1d",
+    borderRadius: 6,
+    cursor: "pointer",
+  },
   main: { flex: 1, padding: "2rem" },
   title: { marginBottom: "1.5rem", fontSize: "1.5rem", fontWeight: 700 },
   cards: {
@@ -485,7 +379,6 @@ const styles = {
     background: "#fff",
     padding: "1rem",
     borderRadius: 8,
-    marginBottom: "1rem",
   },
 };
 

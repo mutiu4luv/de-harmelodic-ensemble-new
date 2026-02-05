@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 const MemberDashboard = () => {
   const navigate = useNavigate();
 
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [activeView, setActiveView] = useState("Dashboard");
@@ -57,81 +59,71 @@ const MemberDashboard = () => {
      LOGOUT
   ========================== */
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("role");
-
+    localStorage.clear();
     navigate("/login", { replace: true });
   };
 
   return (
     <div style={styles.container}>
-      {/* Mobile Header */}
+      {/* MOBILE HEADER */}
       {isMobile && (
         <div style={styles.mobileTopBar}>
           <button onClick={toggleSidebar} style={styles.menuButton}>
             {isSidebarOpen ? "✕" : "☰"}
           </button>
-          <h2 style={{ ...styles.logo, fontSize: "1.2rem" }}>Harmy Member</h2>
+
+          <div style={styles.mobileHeaderText}>
+            <h2 style={styles.logoSmall}>Harmy Member</h2>
+            <span style={styles.welcome}>
+              Welcome, {user.username || "Member"}
+            </span>
+          </div>
         </div>
       )}
 
-      {/* Sidebar */}
+      {/* SIDEBAR */}
       <aside
         style={{
           ...styles.sidebar,
           transform: isSidebarOpen ? "translateX(0)" : "translateX(-100%)",
           position: isMobile ? "fixed" : "relative",
-          zIndex: 1000,
         }}
       >
         <div style={styles.logoWrapper}>
           <h2 style={styles.logo}>Harmy Member</h2>
         </div>
 
-        <nav>
-          <ul style={styles.menu}>
-            {[
-              "Dashboard",
-              "Members",
-              "Attendance",
-              "Contributions",
-              "Settings",
-            ].map((item) => (
-              <li
-                key={item}
-                onClick={() => handleNavClick(item)}
-                style={{
-                  ...styles.menuItem,
-                  ...(activeView === item ? styles.active : {}),
-                }}
-              >
-                {item}
-              </li>
-            ))}
-
-            {/* LOGOUT */}
+        <ul style={styles.menu}>
+          {[
+            "Dashboard",
+            "Members",
+            "Attendance",
+            "Contributions",
+            "Settings",
+          ].map((item) => (
             <li
-              onClick={handleLogout}
+              key={item}
+              onClick={() => handleNavClick(item)}
               style={{
                 ...styles.menuItem,
-                marginTop: "2rem",
-                backgroundColor: "#7f1d1d",
-                color: "#fff",
-                fontWeight: 700,
+                ...(activeView === item ? styles.active : {}),
               }}
             >
-              Logout
+              {item}
             </li>
-          </ul>
-        </nav>
+          ))}
+
+          <li onClick={handleLogout} style={styles.logout}>
+            Logout
+          </li>
+        </ul>
       </aside>
 
-      {/* Main Content */}
+      {/* MAIN CONTENT */}
       <main
         style={{
           ...styles.main,
-          paddingTop: isMobile ? "5rem" : "2rem",
+          paddingTop: isMobile ? "5.5rem" : "2rem",
         }}
       >
         <header style={styles.header}>
@@ -142,24 +134,22 @@ const MemberDashboard = () => {
 
         {/* DASHBOARD */}
         {activeView === "Dashboard" && (
-          <>
-            <div style={styles.cards}>
-              <div style={styles.card}>
-                <h3 style={styles.cardTitle}>Total Members</h3>
-                <p style={styles.cardValue}>{members.length}</p>
-              </div>
-              <div style={styles.card}>
-                <h3 style={styles.cardTitle}>Attendance Rate</h3>
-                <p style={{ ...styles.cardValue, color: "#10b981" }}>85%</p>
-              </div>
-              <div style={styles.card}>
-                <h3 style={styles.cardTitle}>Total Contributions</h3>
-                <p style={{ ...styles.cardValue, color: "#3b82f6" }}>
-                  ₦450,000
-                </p>
-              </div>
+          <div style={styles.cards}>
+            <div style={styles.card}>
+              <p style={styles.cardTitle}>Total Members</p>
+              <h2 style={styles.cardValue}>{members.length}</h2>
             </div>
-          </>
+            <div style={styles.card}>
+              <p style={styles.cardTitle}>Attendance Rate</p>
+              <h2 style={{ ...styles.cardValue, color: "#10b981" }}>85%</h2>
+            </div>
+            <div style={styles.card}>
+              <p style={styles.cardTitle}>Total Contributions</p>
+              <h2 style={{ ...styles.cardValue, color: "#3b82f6" }}>
+                ₦450,000
+              </h2>
+            </div>
+          </div>
         )}
 
         {/* MEMBERS */}
@@ -199,17 +189,9 @@ const MemberDashboard = () => {
         )}
       </main>
 
-      {/* Mobile Overlay */}
+      {/* MOBILE OVERLAY */}
       {isMobile && isSidebarOpen && (
-        <div
-          onClick={toggleSidebar}
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            zIndex: 999,
-          }}
-        />
+        <div onClick={toggleSidebar} style={styles.overlay} />
       )}
     </div>
   );
@@ -222,74 +204,139 @@ const styles = {
   container: {
     display: "flex",
     minHeight: "100vh",
-    backgroundColor: "#f8fafc",
+    background: "#f8fafc",
   },
+
   mobileTopBar: {
     position: "fixed",
     top: 0,
     width: "100%",
-    height: 60,
-    backgroundColor: "#0f172a",
+    height: 64,
+    background: "#0f172a",
     display: "flex",
     alignItems: "center",
     padding: "0 1rem",
-    zIndex: 1001,
+    gap: "1rem",
+    zIndex: 1100,
   },
+
+  mobileHeaderText: {
+    display: "flex",
+    flexDirection: "column",
+    lineHeight: 1.2,
+  },
+
+  logoSmall: {
+    color: "#60a5fa",
+    fontSize: "1rem",
+    margin: 0,
+  },
+
+  welcome: {
+    color: "#e2e8f0",
+    fontSize: "0.75rem",
+  },
+
   menuButton: {
-    fontSize: "1.5rem",
+    fontSize: "1.6rem",
     background: "none",
     border: "none",
     color: "#fff",
   },
+
   sidebar: {
     width: 240,
-    backgroundColor: "#0f172a",
+    background: "#0f172a",
     color: "#e2e8f0",
     padding: "1.5rem 1rem",
     transition: "transform 0.3s",
+    zIndex: 1200,
   },
+
   logoWrapper: { marginBottom: "2rem" },
   logo: { color: "#60a5fa", fontWeight: 700 },
+
   menu: { listStyle: "none", padding: 0 },
+
   menuItem: {
     padding: "0.75rem 1rem",
     borderRadius: 8,
     cursor: "pointer",
     marginBottom: 4,
   },
-  active: { backgroundColor: "#1e293b", color: "#60a5fa" },
+
+  active: {
+    background: "#1e293b",
+    color: "#60a5fa",
+  },
+
+  logout: {
+    marginTop: "2rem",
+    padding: "0.75rem 1rem",
+    background: "#7f1d1d",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontWeight: 700,
+    color: "#fff",
+  },
+
   main: { flex: 1, padding: "2rem" },
-  header: { marginBottom: "2rem" },
-  title: { fontSize: "1.5rem", fontWeight: 700 },
+
+  header: { marginBottom: "1.5rem" },
+
+  title: { fontSize: "1.4rem", fontWeight: 700 },
+
   cards: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
     gap: "1rem",
   },
+
   card: {
     background: "#fff",
     padding: "1.25rem",
     borderRadius: 12,
   },
+
   cardTitle: { fontSize: "0.75rem", color: "#64748b" },
   cardValue: { fontSize: "1.5rem", fontWeight: 700 },
+
   section: {
     background: "#fff",
     padding: "1.25rem",
     borderRadius: 12,
   },
+
   sectionTitle: { fontSize: "1.1rem", marginBottom: "1rem" },
-  tableWrapper: { overflowX: "auto" },
-  table: { width: "100%", borderCollapse: "collapse" },
+
+  tableWrapper: {
+    overflowX: "auto",
+  },
+
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    minWidth: 600,
+  },
+
   th: {
-    textAlign: "left",
     padding: "0.75rem",
     background: "#f1f5f9",
     fontSize: "0.75rem",
+    textAlign: "left",
   },
+
   td: {
     padding: "0.75rem",
     borderBottom: "1px solid #e2e8f0",
+    fontSize: "0.85rem",
+  },
+
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.5)",
+    zIndex: 999,
   },
 };
 
