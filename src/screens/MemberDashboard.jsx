@@ -28,6 +28,46 @@ const MemberDashboard = () => {
     return `${Math.round((presentCount / attendance.length) * 100)}%`;
   })();
 
+  const monthlyAttendanceSummary = (() => {
+    if (!attendance.length) return {};
+
+    return attendance.reduce((acc, record) => {
+      const monthKey = new Date(record.date).toLocaleString("en-US", {
+        month: "long",
+        year: "numeric",
+      });
+
+      if (!acc[monthKey]) {
+        acc[monthKey] = {
+          total: 0,
+          present: 0,
+          absent: 0,
+        };
+      }
+
+      acc[monthKey].total += 1;
+
+      if (record.present) {
+        acc[monthKey].present += 1;
+      } else {
+        acc[monthKey].absent += 1;
+      }
+
+      return acc;
+    }, {});
+  })();
+  const currentMonthAttendance = (() => {
+    const currentMonthKey = new Date().toLocaleString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+
+    const monthData = monthlyAttendanceSummary[currentMonthKey];
+    if (!monthData) return "—";
+
+    return `${monthData.present}/${monthData.total}`;
+  })();
+
   useEffect(() => {
     const fetchContributions = async () => {
       try {
@@ -195,26 +235,60 @@ const MemberDashboard = () => {
 
         {/* DASHBOARD */}
         {activeView === "Dashboard" && (
-          <div style={styles.cards}>
-            <div style={styles.card}>
-              <p style={styles.cardTitle}>Total Members</p>
-              <h2 style={styles.cardValue}>{members.length}</h2>
+          <>
+            <div style={styles.cards}>
+              <div style={styles.card}>
+                <p style={styles.cardTitle}>Total Members</p>
+                <h2 style={styles.cardValue}>{members.length}</h2>
+              </div>
+
+              <div style={styles.card}>
+                <p style={styles.cardTitle}>Attendance Rate</p>
+                <h2 style={{ ...styles.cardValue, color: "#10b981" }}>
+                  {attendanceRate}
+                </h2>
+              </div>
+
+              <div style={styles.card}>
+                <p style={styles.cardTitle}>This Month Attendance</p>
+                <h2 style={{ ...styles.cardValue, color: "#8b5cf6" }}>
+                  {currentMonthAttendance}
+                </h2>
+              </div>
+
+              <div style={styles.card}>
+                <p style={styles.cardTitle}>Total Contributions</p>
+                <h2 style={{ ...styles.cardValue, color: "#3b82f6" }}>
+                  ₦{totalContribution.toLocaleString()}
+                </h2>
+              </div>
             </div>
 
-            <div style={styles.card}>
-              <p style={styles.cardTitle}>Attendance Rate</p>
-              <h2 style={{ ...styles.cardValue, color: "#10b981" }}>
-                {attendanceRate}
-              </h2>
-            </div>
+            {/* MONTHLY SUMMARY */}
+            <div style={{ marginTop: 30 }}>
+              <h3 style={{ marginBottom: 10 }}>Monthly Attendance Summary</h3>
 
-            <div style={styles.card}>
-              <p style={styles.cardTitle}>Total Contributions</p>
-              <h2 style={{ ...styles.cardValue, color: "#3b82f6" }}>
-                ₦{totalContribution.toLocaleString()}
-              </h2>
+              {Object.entries(monthlyAttendanceSummary).map(([month, data]) => (
+                <div
+                  key={month}
+                  style={{
+                    background: "#f9fafb",
+                    padding: 12,
+                    borderRadius: 8,
+                    marginBottom: 10,
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <strong>{month}</strong>
+                  <span>
+                    Present: {data.present} | Absent: {data.absent} | Total:{" "}
+                    {data.total}
+                  </span>
+                </div>
+              ))}
             </div>
-          </div>
+          </>
         )}
 
         {/* MEMBERS */}
