@@ -8,6 +8,7 @@ const MemberDashboard = () => {
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const memberId = user?.id;
 
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -20,9 +21,59 @@ const MemberDashboard = () => {
 
   const [attendancePage, setAttendancePage] = useState(1);
   const [selectedMonth, setSelectedMonth] = useState("all");
+  const [data, setData] = useState(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [contributionsPage, setContributionsPage] = useState(1);
+  const CONTRIBUTIONS_PER_PAGE = 7;
+
+  const filteredContributions =
+    !loading && data && Array.isArray(data.contributions)
+      ? data.contributions.filter((c) =>
+          c.title.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : [];
+
+  const contributionsTotalPages = Math.ceil(
+    filteredContributions.length / CONTRIBUTIONS_PER_PAGE
+  );
+
+  const paginatedContributions = filteredContributions.slice(
+    (contributionsPage - 1) * CONTRIBUTIONS_PER_PAGE,
+    contributionsPage * CONTRIBUTIONS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setContributionsPage(1);
+  }, [searchTerm]);
 
   const API_BASE =
     import.meta.env.VITE_API_BASE || "https://harme-backend.onrender.com";
+
+  useEffect(() => {
+    if (!memberId) {
+      console.warn("No user found in localStorage!");
+      return;
+    }
+
+    if (activeView === "My Contributions" && memberId) {
+      setLoading(true);
+
+      axios
+        .get(`${API_BASE}/api/admin/contributions/my-payments/${memberId}`)
+        .then((res) => {
+          setData(res.data);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error(
+            "Error fetching contributions:",
+            err.response?.data || err.message
+          );
+          setLoading(false);
+        });
+    }
+  }, [activeView, memberId]);
 
   const attendanceRate = (() => {
     if (!attendance.length) return "—";
@@ -99,32 +150,32 @@ const MemberDashboard = () => {
     return `${monthData.present}/${monthData.total}`;
   })();
 
-  useEffect(() => {
-    const fetchContributions = async () => {
-      try {
-        const memberId = user?.id;
-        if (!memberId) return;
+  // useEffect(() => {
+  //   const fetchContributions = async () => {
+  //     try {
+  //       const memberId = user?.id;
+  //       if (!memberId) return;
 
-        const res = await axios.get(
-          `${API_BASE}/api/admin/contributions/member/${memberId}`
-        );
+  //       const res = await axios.get(
+  //         `${API_BASE}/api/admin/contributions/member/${memberId}`
+  //       );
 
-        const total = res.data.contributions.reduce(
-          (sum, c) => sum + c.amount,
-          0
-        );
+  //       const total = res.data.contributions.reduce(
+  //         (sum, c) => sum + c.amount,
+  //         0
+  //       );
 
-        setTotalContribution(total);
-      } catch (err) {
-        console.error("Failed to fetch contributions:", err);
-        enqueueSnackbar("Failed to fetch contributions", {
-          variant: "error",
-        });
-      }
-    };
+  //       setTotalContribution(total);
+  //     } catch (err) {
+  //       console.error("Failed to fetch contributions:", err);
+  //       enqueueSnackbar("Failed to fetch contributions", {
+  //         variant: "error",
+  //       });
+  //     }
+  //   };
 
-    fetchContributions();
-  }, [user]);
+  //   fetchContributions();
+  // }, [user]);
 
   /* =========================
      RESPONSIVE HANDLING
@@ -226,24 +277,20 @@ const MemberDashboard = () => {
         </div>
 
         <ul style={styles.menu}>
-          {[
-            "Dashboard",
-            "Members",
-            "Attendance",
-            "Contributions",
-            "Settings",
-          ].map((item) => (
-            <li
-              key={item}
-              onClick={() => handleNavClick(item)}
-              style={{
-                ...styles.menuItem,
-                ...(activeView === item ? styles.active : {}),
-              }}
-            >
-              {item}
-            </li>
-          ))}
+          {["Dashboard", "Members", "Attendance", "My Contributions"].map(
+            (item) => (
+              <li
+                key={item}
+                onClick={() => handleNavClick(item)}
+                style={{
+                  ...styles.menuItem,
+                  ...(activeView === item ? styles.active : {}),
+                }}
+              >
+                {item}
+              </li>
+            )
+          )}
 
           <li onClick={handleLogout} style={styles.logout}>
             Logout
@@ -477,6 +524,101 @@ const MemberDashboard = () => {
             )}
           </div>
         )}
+        {activeView === "My Contributions" && (
+          <div style={styles.contributionsSection}>
+            {/* <h2 style={styles.sectionTitle}>My Contributions</h2> */}
+
+            {/* Search */}
+            <div style={{ marginBottom: 18 }}>
+              <input
+                type="text"
+                placeholder="Search by title..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={styles.searchInput}
+              />
+            </div>
+
+            {/* Loading state */}
+            {loading && (
+              <p style={styles.loadingText}>Loading your contributions...</p>
+            )}
+
+            {/* Display total owed */}
+            {!loading && data && (
+              <div style={styles.totalOwed}>
+                <strong>Total Owed: </strong>
+                <span style={{ color: "#ef4444", fontWeight: 700 }}>
+                  ₦{data.totalOwed.toLocaleString()}
+                </span>
+              </div>
+            )}
+
+            {/* Contributions table */}
+            {!loading && filteredContributions.length > 0 ? (
+              <div style={styles.tableWrapper}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Title</th>
+                      <th style={styles.th}>Target Amount</th>
+                      <th style={styles.th}>Paid Amount</th>
+                      <th style={styles.th}>Remaining</th>
+                      <th style={styles.th}>Paid On</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedContributions.map((c) => (
+                      <tr key={c.contributionId} style={styles.tr}>
+                        <td style={styles.td}>{c.title}</td>
+                        <td style={{ ...styles.td, color: "#3b82f6" }}>
+                          ₦{c.targetAmount.toLocaleString()}
+                        </td>
+                        <td style={{ ...styles.td, color: "#10b981" }}>
+                          ₦{c.paidAmount.toLocaleString()}
+                        </td>
+                        <td style={{ ...styles.td, color: "#ef4444" }}>
+                          ₦{c.notPaid.toLocaleString()}
+                        </td>
+                        <td style={styles.td}>
+                          {c.paidOn
+                            ? new Date(c.paidOn).toLocaleDateString()
+                            : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {/* Pagination */}
+                <div style={styles.paginationWrapper}>
+                  <button
+                    disabled={contributionsPage === 1}
+                    onClick={() => setContributionsPage((p) => p - 1)}
+                    style={paginationBtn(contributionsPage === 1)}
+                  >
+                    Prev
+                  </button>
+                  <span style={{ color: "#c7c9d9" }}>
+                    Page {contributionsPage} of {contributionsTotalPages}
+                  </span>
+                  <button
+                    disabled={contributionsPage === contributionsTotalPages}
+                    onClick={() => setContributionsPage((p) => p + 1)}
+                    style={paginationBtn(
+                      contributionsPage === contributionsTotalPages
+                    )}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            ) : (
+              !loading && (
+                <p style={styles.noData}>You have no contributions yet.</p>
+              )
+            )}
+          </div>
+        )}
       </main>
 
       {/* MOBILE OVERLAY */}
@@ -491,6 +633,83 @@ const MemberDashboard = () => {
    STYLES
 ========================= */
 const styles = {
+  contributionsSection: {
+    padding: 24,
+    background: "#fff",
+    borderRadius: 16,
+    boxShadow: "0 2px 12px rgba(35,41,70,0.08)",
+    marginBottom: 32,
+    maxWidth: 900,
+    margin: "0 auto",
+  },
+  searchInput: {
+    width: "100%",
+    padding: "0.7rem",
+    borderRadius: 8,
+    border: "1px solid #334155",
+    fontSize: "1rem",
+    background: "#f1f5f9",
+    color: "#232946",
+    outline: "none",
+  },
+  loadingText: {
+    color: "#64748b",
+    fontStyle: "italic",
+    marginBottom: 16,
+  },
+  totalOwed: {
+    marginBottom: 20,
+    fontSize: "1.1rem",
+    background: "#f9fafb",
+    padding: "10px 16px",
+    borderRadius: 8,
+    fontWeight: 600,
+    display: "inline-block",
+  },
+  tableWrapper: {
+    overflowX: "auto",
+    marginBottom: 24,
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    minWidth: 600,
+    background: "#f8fafc",
+    borderRadius: 12,
+    boxShadow: "0 1px 4px rgba(35,41,70,0.04)",
+  },
+  th: {
+    padding: "0.75rem",
+    background: "#232946",
+    color: "#f4d160",
+    fontSize: "0.85rem",
+    textAlign: "left",
+    borderBottom: "2px solid #3b82f6",
+    fontWeight: 700,
+  },
+  td: {
+    padding: "0.75rem",
+    borderBottom: "1px solid #e2e8f0",
+    fontSize: "0.98rem",
+    background: "#fff",
+  },
+  tr: {
+    transition: "background 0.15s",
+    ":hover": {
+      background: "#f1f5f9",
+    },
+  },
+  paginationWrapper: {
+    display: "flex",
+    justifyContent: "center",
+    gap: 12,
+    marginTop: 16,
+  },
+  noData: {
+    color: "#64748b",
+    fontStyle: "italic",
+    marginTop: 24,
+  },
   cards: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
