@@ -21,6 +21,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Stack,
+  Divider,
+  LinearProgress,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { SnackbarProvider, useSnackbar } from "notistack";
@@ -154,11 +157,18 @@ const AdminDashboardContent = () => {
 
   const [attendancePage, setAttendancePage] = useState(1);
   const [selectedMonth, setSelectedMonth] = useState("all");
-  const [contribution, setContribution] = useState({
-    memberId: "",
-    amount: "",
-    purpose: "",
-  });
+  const [contributions, setContributions] = useState([]);
+
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [targetAmount, setTargetAmount] = useState("");
+
+  const [selectedContribution, setSelectedContribution] = useState("");
+  const [selectedMember, setSelectedMember] = useState("");
+  const [amount, setAmount] = useState("");
+  const [paidOn, setPaidOn] = useState("");
+
+  const [payments, setPayments] = useState([]);
   const ITEMS_PER_PAGE = 8;
   const filteredAttendance =
     selectedMonth === "all"
@@ -181,6 +191,102 @@ const AdminDashboardContent = () => {
   useEffect(() => {
     setAttendancePage(1);
   }, [selectedMonth]);
+
+  const fetchContributions = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/admin/contributions`);
+      setContributions(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Fetch payments for selected contribution
+  const fetchPayments = async (id) => {
+    try {
+      const res = await axios.get(
+        `${API_BASE}/api/admin/contributions/${id}/payments`
+      );
+      setPayments(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchContributions();
+  }, []);
+
+  useEffect(() => {
+    if (selectedContribution) {
+      fetchPayments(selectedContribution);
+    }
+  }, [selectedContribution]);
+
+  const handleCreateContribution = async () => {
+    try {
+      await axios.post(`${API_BASE}/api/admin/contributions`, {
+        title,
+        description,
+        targetAmount: Number(targetAmount) || 0,
+      });
+      enqueueSnackbar("Contribution created successfully", {
+        variant: "success",
+      });
+      setTitle("");
+      setDescription("");
+      setTargetAmount("");
+      fetchContributions();
+    } catch (err) {
+      console.error(err);
+      enqueueSnackbar("Failed to create contribution", { variant: "error" });
+    }
+  };
+
+  const handleRecordPayment = async () => {
+    try {
+      await axios.post(
+        `${API_BASE}/api/admin/contributions/${selectedContribution}/pay`,
+        {
+          memberId: selectedMember,
+          amount: Number(amount),
+          paidOn,
+        }
+      );
+      enqueueSnackbar("Payment recorded successfully", { variant: "success" });
+      setSelectedMember("");
+      setAmount("");
+      setPaidOn("");
+      fetchPayments(selectedContribution);
+    } catch (err) {
+      console.error(err);
+      enqueueSnackbar("Failed to record payment", { variant: "error" });
+    }
+  };
+
+  // Calculate progress
+  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+  const target =
+    contributions.find((c) => c._id === selectedContribution)?.targetAmount ||
+    0;
+  const progressPercent = target
+    ? Math.min((totalPaid / target) * 100, 100)
+    : 0;
+
+  const paidMemberIds = payments.map((p) => p.member._id);
+  const paidMembers = members.filter((m) => paidMemberIds.includes(m._id));
+  const unpaidMembers = members.filter((m) => !paidMemberIds.includes(m._id));
+
+  // const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+  // const progressPercent = targetAmount
+  //   ? Math.min((totalPaid / targetAmount) * 100, 100)
+  //   : 0;
+
+  // const paidMemberIds = payments.map((p) => p.member._id);
+
+  // const paidMembers = members.filter((m) => paidMemberIds.includes(m._id));
+
+  // const unpaidMembers = members.filter((m) => !paidMemberIds.includes(m._id));
 
   // update role function
   const updateRole = async (userId, role) => {
@@ -626,23 +732,145 @@ const AdminDashboardContent = () => {
         )}
 
         {activeView === "Contributions" && (
-          <Card sx={{ maxWidth: 500, mx: "auto" }}>
-            <CardContent>
-              <Typography variant="h6">Record Contribution</Typography>
-              <TextField select fullWidth sx={{ mt: 2 }}>
-                {members.map((m) => (
-                  <MenuItem key={m._id} value={m._id}>
-                    {m.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField label="Amount" fullWidth sx={{ mt: 2 }} />
-              <TextField label="Purpose" fullWidth sx={{ mt: 2 }} />
-              <Button fullWidth variant="contained" sx={{ mt: 3 }}>
-                Save Contribution
-              </Button>
-            </CardContent>
-          </Card>
+          <Stack spacing={4} sx={{ maxWidth: 700, mx: "auto" }}>
+            {/* ================= CREATE CONTRIBUTION ================= */}
+            <Card sx={{ background: "#fff", borderRadius: 3, boxShadow: 3 }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight={700}>
+                  Create Contribution
+                </Typography>
+                <TextField
+                  label="Title"
+                  fullWidth
+                  sx={{ mt: 2 }}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+                <TextField
+                  label="Description"
+                  fullWidth
+                  multiline
+                  rows={2}
+                  sx={{ mt: 2 }}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+                <TextField
+                  label="Target Amount"
+                  type="number"
+                  fullWidth
+                  sx={{ mt: 2 }}
+                  value={targetAmount}
+                  onChange={(e) => setTargetAmount(e.target.value)}
+                />
+                <Button
+                  variant="contained"
+                  fullWidth
+                  sx={{ mt: 3, borderRadius: 2 }}
+                  onClick={handleCreateContribution}
+                >
+                  Create Contribution
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Divider />
+
+            {/* ================= RECORD PAYMENT ================= */}
+            <Card sx={{ background: "#fff", borderRadius: 3, boxShadow: 3 }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight={700}>
+                  Record Member Payment
+                </Typography>
+                <TextField
+                  select
+                  label="Contribution"
+                  fullWidth
+                  sx={{ mt: 2 }}
+                  value={selectedContribution}
+                  onChange={(e) => setSelectedContribution(e.target.value)}
+                >
+                  {contributions.map((c) => (
+                    <MenuItem key={c._id} value={c._id}>
+                      {c.title}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  label="Member"
+                  fullWidth
+                  sx={{ mt: 2 }}
+                  value={selectedMember}
+                  onChange={(e) => setSelectedMember(e.target.value)}
+                >
+                  {members.map((m) => (
+                    <MenuItem key={m._id} value={m._id}>
+                      {m.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  label="Amount Paid"
+                  type="number"
+                  fullWidth
+                  sx={{ mt: 2 }}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+                <TextField
+                  label="Date Paid"
+                  type="date"
+                  fullWidth
+                  sx={{ mt: 2 }}
+                  InputLabelProps={{ shrink: true }}
+                  value={paidOn}
+                  onChange={(e) => setPaidOn(e.target.value)}
+                />
+                <Button
+                  variant="contained"
+                  color="success"
+                  fullWidth
+                  sx={{ mt: 3, borderRadius: 2 }}
+                  onClick={handleRecordPayment}
+                >
+                  Save Payment
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* ================= PROGRESS & STATUS ================= */}
+            {selectedContribution && (
+              <Card sx={{ background: "#fff", borderRadius: 3, boxShadow: 3 }}>
+                <CardContent>
+                  <Typography fontWeight={700}>Contribution Status</Typography>
+                  <LinearProgress
+                    variant="determinate"
+                    value={progressPercent}
+                    sx={{ mt: 2, height: 10, borderRadius: 5 }}
+                  />
+                  <Typography sx={{ mt: 1 }}>
+                    ₦{totalPaid} raised of ₦{target}
+                  </Typography>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography fontWeight={600}>Paid Members</Typography>
+                  {paidMembers.map((m) => (
+                    <Typography key={m._id} color="success.main">
+                      ✔ {m.name}
+                    </Typography>
+                  ))}
+                  <Typography fontWeight={600} sx={{ mt: 2 }}>
+                    Not Paid
+                  </Typography>
+                  {unpaidMembers.map((m) => (
+                    <Typography key={m._id} color="error.main">
+                      ✖ {m.name}
+                    </Typography>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+          </Stack>
         )}
       </main>
     </div>
