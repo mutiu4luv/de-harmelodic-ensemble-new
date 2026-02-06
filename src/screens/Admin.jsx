@@ -27,6 +27,8 @@ import {
   LinearProgress,
   TablePagination,
   Chip,
+  FormControl,
+  Select,
 } from "@mui/material";
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -177,6 +179,45 @@ const AdminDashboardContent = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [openRows, setOpenRows] = useState({});
+
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [attendanceSearch, setAttendanceSearch] = useState("");
+  const [attendancePages, setAttendancePages] = useState(0);
+  const [attendanceRowsPerPage, setAttendanceRowsPerPage] = useState(5);
+  const [attendanceMonthSelection, setAttendanceMonthSelection] = useState({});
+
+  const toggleRow = (memberId) => {
+    setOpenRows((prev) => ({
+      ...prev,
+      [memberId]: !prev[memberId],
+    }));
+  };
+  // Fetch attendance data
+  const fetchAttendanceData = async () => {
+    try {
+      const res = await axios.get(
+        `${API_BASE}/api/admin/attendance/per-member`
+      );
+      setAttendanceData(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Failed to fetch attendance", err);
+      setAttendanceData([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchAttendanceData();
+  }, []);
+
+  // Filtered & paginated data
+  const filteredAttendanceData = attendanceData.filter((d) =>
+    d.member?.name?.toLowerCase().includes(attendanceSearch.toLowerCase())
+  );
+
+  const paginatedAttendanceData = filteredAttendanceData.slice(
+    attendancePages * attendanceRowsPerPage,
+    attendancePages * attendanceRowsPerPage + attendanceRowsPerPage
+  );
 
   // Fetch all members with contributions & payments
   const fetchData = async () => {
@@ -486,6 +527,7 @@ const AdminDashboardContent = () => {
             "My Attendance",
             "Contributions",
             "All contributions",
+            "All Attendance",
           ].map((item) => (
             <li
               key={item}
@@ -891,7 +933,7 @@ const AdminDashboardContent = () => {
             </Card>
 
             {/* ================= PROGRESS & STATUS ================= */}
-            {selectedContribution && (
+            {/* {selectedContribution && (
               <Card sx={{ background: "#fff", borderRadius: 3, boxShadow: 3 }}>
                 <CardContent>
                   <Typography fontWeight={700}>Contribution Status</Typography>
@@ -920,7 +962,7 @@ const AdminDashboardContent = () => {
                   ))}
                 </CardContent>
               </Card>
-            )}
+            )} */}
           </Stack>
         )}
 
@@ -1087,6 +1129,159 @@ const AdminDashboardContent = () => {
                     onPageChange={handleChangePage}
                     rowsPerPage={rowsPerPage}
                     onRowsPerPageChange={handleChangeRowsPerPage}
+                    rowsPerPageOptions={[5, 10, 25]}
+                  />
+                </TableContainer>
+              </CardContent>
+            </Card>
+          </Stack>
+        )}
+        {activeView === "All Attendance" && (
+          <Stack spacing={4} sx={{ maxWidth: 1000, mx: "auto" }}>
+            <Card sx={{ background: "#fff", borderRadius: 3, boxShadow: 3 }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+                  All Members Attendance
+                </Typography>
+
+                {/* Search input */}
+                <TextField
+                  label="Search Member"
+                  fullWidth
+                  sx={{ mb: 3 }}
+                  value={attendanceSearch}
+                  onChange={(e) => setAttendanceSearch(e.target.value)}
+                />
+
+                {/* Attendance Table */}
+                <TableContainer component={Paper}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Member</TableCell>
+                        <TableCell>Parish</TableCell>
+                        <TableCell>Part</TableCell>
+                        <TableCell>Total Present</TableCell>
+                        <TableCell>Total Absent</TableCell>
+                        <TableCell>Attendance Records</TableCell>
+                        <TableCell>Rehearsal % (Monthly)</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filteredAttendanceData.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} align="center">
+                            No members found.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paginatedAttendanceData.map((d) => {
+                          const totalPresent = d.attendance.filter(
+                            (a) => a.present
+                          ).length;
+                          const totalAbsent = d.attendance.filter(
+                            (a) => !a.present
+                          ).length;
+
+                          // Attendance percentages per month
+                          const attendanceByMonth = {};
+                          d.attendance.forEach((a) => {
+                            const month = new Date(a.date).toLocaleString(
+                              "default",
+                              {
+                                month: "long",
+                                year: "numeric",
+                              }
+                            );
+                            if (!attendanceByMonth[month]) {
+                              attendanceByMonth[month] = {
+                                present: 0,
+                                total: 0,
+                              };
+                            }
+                            attendanceByMonth[month].total += 1;
+                            if (a.present)
+                              attendanceByMonth[month].present += 1;
+                          });
+
+                          const months = Object.keys(attendanceByMonth);
+                          const selectedMonth =
+                            attendanceMonthSelection[d.member._id] || months[0];
+                          const monthData = attendanceByMonth[selectedMonth];
+                          const percentage =
+                            monthData && monthData.total > 0
+                              ? Math.round(
+                                  (monthData.present / monthData.total) * 100
+                                )
+                              : 0;
+
+                          return (
+                            <TableRow key={d.member._id}>
+                              <TableCell>{d.member.name}</TableCell>
+                              <TableCell>{d.member.parish}</TableCell>
+                              <TableCell>{d.member.partYouSing}</TableCell>
+                              <TableCell>{totalPresent}</TableCell>
+                              <TableCell>{totalAbsent}</TableCell>
+                              <TableCell>
+                                {d.attendance.map((a) => (
+                                  <Chip
+                                    key={a._id}
+                                    label={`${new Date(
+                                      a.date
+                                    ).toLocaleDateString()} - ${
+                                      a.present ? "✔ Present" : "✖ Absent"
+                                    }`}
+                                    size="small"
+                                    color={a.present ? "success" : "error"}
+                                    sx={{ mr: 0.5, mb: 0.5 }}
+                                  />
+                                ))}
+                              </TableCell>
+                              <TableCell>
+                                <FormControl fullWidth>
+                                  <Select
+                                    value={selectedMonth}
+                                    onChange={(e) =>
+                                      setAttendanceMonthSelection((prev) => ({
+                                        ...prev,
+                                        [d.member._id]: e.target.value,
+                                      }))
+                                    }
+                                    size="small"
+                                  >
+                                    {months.map((month) => (
+                                      <MenuItem key={month} value={month}>
+                                        {month}
+                                      </MenuItem>
+                                    ))}
+                                  </Select>
+                                </FormControl>
+                                <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                  {percentage}% attendance
+                                </Typography>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+
+                  {/* Pagination */}
+                  <TablePagination
+                    component="div"
+                    count={filteredAttendanceData.length}
+                    page={attendancePages}
+                    onPageChange={(event, newPage) =>
+                      setAttendancePages(newPage)
+                    }
+                    rowsPerPage={attendanceRowsPerPage}
+                    onRowsPerPageChange={(event) => {
+                      setAttendanceRowsPerPage(
+                        parseInt(event.target.value, 10)
+                      );
+                      setAttendancePages(0);
+                    }}
                     rowsPerPageOptions={[5, 10, 25]}
                   />
                 </TableContainer>
