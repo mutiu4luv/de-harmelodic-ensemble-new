@@ -4,6 +4,7 @@ import {
   Box,
   Card,
   CardContent,
+  Collapse,
   Typography,
   Checkbox,
   Button,
@@ -24,7 +25,10 @@ import {
   Stack,
   Divider,
   LinearProgress,
+  TablePagination,
+  Chip,
 } from "@mui/material";
+import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { SnackbarProvider, useSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
@@ -167,6 +171,52 @@ const AdminDashboardContent = () => {
   const [selectedMember, setSelectedMember] = useState("");
   const [amount, setAmount] = useState("");
   const [paidOn, setPaidOn] = useState("");
+
+  const [data, setData] = useState([]);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [openRows, setOpenRows] = useState({});
+
+  // Fetch all members with contributions & payments
+  const fetchData = async () => {
+    try {
+      const res = await axios.get(
+        `${API_BASE}/api/admin/contributions/payments-per-member`
+      );
+
+      // Ensure data is an array
+      if (Array.isArray(res.data)) {
+        setData(res.data);
+      } else {
+        console.warn("Unexpected response data, expected array:", res.data);
+        setData([]);
+      }
+      console.log("Fetched contributions data:", res.data);
+    } catch (err) {
+      console.error("Failed to fetch contributions", err);
+      setData([]);
+    }
+  };
+
+  // Filter data by search
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const filteredData = Array.isArray(data)
+    ? data.filter((d) =>
+        d.member?.name?.toLowerCase().includes(search.toLowerCase())
+      )
+    : [];
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   const [payments, setPayments] = useState([]);
   const ITEMS_PER_PAGE = 8;
@@ -432,9 +482,10 @@ const AdminDashboardContent = () => {
           {[
             "Dashboard",
             "Members",
-            "Take Attendance", // ADMIN ONLY
-            "My Attendance", // MEMBER VIEW
+            "Take Attendance",
+            "My Attendance",
             "Contributions",
+            "All contributions",
           ].map((item) => (
             <li
               key={item}
@@ -872,6 +923,174 @@ const AdminDashboardContent = () => {
             )}
           </Stack>
         )}
+        <Stack spacing={4} sx={{ maxWidth: 1200, mx: "auto" }}>
+          <Card sx={{ background: "#fff", borderRadius: 3, boxShadow: 3 }}>
+            <CardContent>
+              <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+                All Members Contribution History
+              </Typography>
+
+              <TextField
+                label="Search Member"
+                fullWidth
+                sx={{ mb: 3 }}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell />
+                      <TableCell>Member</TableCell>
+                      <TableCell>Total Owed</TableCell>
+                      <TableCell># Unpaid Contributions</TableCell>
+                      <TableCell>Unpaid Contributions</TableCell>
+                      <TableCell>All Contributions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredData.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center">
+                          No members found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredData
+                        .slice(
+                          page * rowsPerPage,
+                          page * rowsPerPage + rowsPerPage
+                        )
+                        .map((d) => {
+                          const unpaidContributions = d.contributions.filter(
+                            (c) => c.notPaid > 0
+                          );
+
+                          return (
+                            <React.Fragment key={d.member._id}>
+                              <TableRow>
+                                <TableCell>
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => toggleRow(d.member._id)}
+                                  >
+                                    {openRows[d.member._id] ? (
+                                      <KeyboardArrowUp />
+                                    ) : (
+                                      <KeyboardArrowDown />
+                                    )}
+                                  </IconButton>
+                                </TableCell>
+                                <TableCell>{d.member.name}</TableCell>
+                                <TableCell>₦{d.totalOwed}</TableCell>
+                                <TableCell>
+                                  {unpaidContributions.length}
+                                </TableCell>
+                                <TableCell>
+                                  {unpaidContributions.map((c) => (
+                                    <Chip
+                                      key={c.contributionId}
+                                      label={`${c.title} (₦${c.notPaid})`}
+                                      size="small"
+                                      color="error"
+                                      sx={{ mr: 0.5, mb: 0.5 }}
+                                    />
+                                  ))}
+                                </TableCell>
+                                <TableCell>
+                                  {d.contributions.map((c) => (
+                                    <Chip
+                                      key={c.contributionId}
+                                      label={`${c.title}: ₦${c.paidAmount}`}
+                                      size="small"
+                                      color={
+                                        c.notPaid > 0 ? "warning" : "success"
+                                      }
+                                      sx={{ mr: 0.5, mb: 0.5 }}
+                                    />
+                                  ))}
+                                </TableCell>
+                              </TableRow>
+
+                              {/* Collapsible row for paid/unpaid members per contribution */}
+                              <TableRow>
+                                <TableCell
+                                  style={{ paddingBottom: 0, paddingTop: 0 }}
+                                  colSpan={6}
+                                >
+                                  <Collapse
+                                    in={openRows[d.member._id]}
+                                    timeout="auto"
+                                    unmountOnExit
+                                  >
+                                    <Box sx={{ margin: 1 }}>
+                                      {d.contributions.map((c) => (
+                                        <Box
+                                          key={c.contributionId}
+                                          sx={{ mb: 1 }}
+                                        >
+                                          <Typography variant="subtitle2">
+                                            {c.title} - ₦{c.targetAmount}
+                                          </Typography>
+                                          <Typography
+                                            variant="caption"
+                                            sx={{ mr: 1 }}
+                                          >
+                                            Paid:
+                                          </Typography>
+                                          {c.paidMembers.map((pm) => (
+                                            <Chip
+                                              key={pm._id}
+                                              label={`${pm.name} (₦${pm.amount})`}
+                                              size="small"
+                                              color="success"
+                                              sx={{ mr: 0.5, mb: 0.5 }}
+                                            />
+                                          ))}
+
+                                          <Typography
+                                            variant="caption"
+                                            sx={{ mr: 1 }}
+                                          >
+                                            Not Paid:
+                                          </Typography>
+                                          {c.unpaidMembers.map((um) => (
+                                            <Chip
+                                              key={um._id}
+                                              label={um.name}
+                                              size="small"
+                                              color="error"
+                                              sx={{ mr: 0.5, mb: 0.5 }}
+                                            />
+                                          ))}
+                                        </Box>
+                                      ))}
+                                    </Box>
+                                  </Collapse>
+                                </TableCell>
+                              </TableRow>
+                            </React.Fragment>
+                          );
+                        })
+                    )}
+                  </TableBody>
+                </Table>
+
+                <TablePagination
+                  component="div"
+                  count={filteredData.length}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  rowsPerPage={rowsPerPage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                  rowsPerPageOptions={[5, 10, 25]}
+                />
+              </TableContainer>
+            </CardContent>
+          </Card>
+        </Stack>
       </main>
     </div>
   );
