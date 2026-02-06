@@ -152,11 +152,36 @@ const AdminDashboardContent = () => {
   const [myAttendance, setMyAttendance] = useState([]);
   const [monthlySummary, setMonthlySummary] = useState([]);
 
+  const [attendancePage, setAttendancePage] = useState(1);
+  const [selectedMonth, setSelectedMonth] = useState("all");
   const [contribution, setContribution] = useState({
     memberId: "",
     amount: "",
     purpose: "",
   });
+  const ITEMS_PER_PAGE = 8;
+  const filteredAttendance =
+    selectedMonth === "all"
+      ? myAttendance
+      : myAttendance.filter((a) => {
+          const d = new Date(a.date);
+          const key = d.toLocaleString("en-US", {
+            month: "long",
+            year: "numeric",
+          });
+          return key === selectedMonth;
+        });
+
+  const totalPages = Math.ceil(filteredAttendance.length / ITEMS_PER_PAGE);
+
+  const paginatedAttendance = filteredAttendance.slice(
+    (attendancePage - 1) * ITEMS_PER_PAGE,
+    attendancePage * ITEMS_PER_PAGE
+  );
+  useEffect(() => {
+    setAttendancePage(1);
+  }, [selectedMonth]);
+
   // update role function
   const updateRole = async (userId, role) => {
     try {
@@ -469,39 +494,135 @@ const AdminDashboardContent = () => {
         )}
 
         {activeView === "My Attendance" && (
-          <Card sx={{ maxWidth: 600, mx: "auto", mt: 4 }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                My Rehearsal Attendance
-              </Typography>
+          <div style={{ maxWidth: 800, margin: "0 auto" }}>
+            <h1 style={styles.title}>My Attendance</h1>
 
-              {myAttendance.length === 0 ? (
-                <Typography>No attendance records yet.</Typography>
-              ) : (
-                myAttendance.map((a) => {
+            {/* FILTER */}
+            <div style={{ marginBottom: 16 }}>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                style={{
+                  padding: "0.6rem",
+                  borderRadius: 8,
+                  border: "1px solid #334155",
+                  background: "#0f172a",
+                  color: "#fff",
+                }}
+              >
+                <option value="all">All Months</option>
+                {monthlySummary.map((m) => (
+                  <option key={m.month} value={m.month}>
+                    {m.month}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {filteredAttendance.length === 0 ? (
+              <div style={styles.section}>
+                <p style={styles.noData}>No attendance records</p>
+              </div>
+            ) : (
+              <div style={styles.monthlySummaryWrapper}>
+                {/* MINI PROGRESS BAR */}
+                {selectedMonth !== "all" &&
+                  (() => {
+                    const month = monthlySummary.find(
+                      (m) => m.month === selectedMonth
+                    );
+                    if (!month) return null;
+
+                    return (
+                      <div style={{ marginBottom: 20 }}>
+                        <div
+                          style={{
+                            height: 10,
+                            background: "#1e293b",
+                            borderRadius: 6,
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              height: "100%",
+                              width: `${month.rate}%`,
+                              background: "#10b981",
+                              transition: "width .3s",
+                            }}
+                          />
+                        </div>
+                        <small style={{ color: "#c7c9d9" }}>
+                          Attendance rate: {month.rate}%
+                        </small>
+                      </div>
+                    );
+                  })()}
+
+                {/* RECORDS */}
+                {paginatedAttendance.map((a) => {
                   const formattedDate = new Date(a.date).toLocaleDateString(
                     "en-GB"
                   );
 
                   return (
-                    <Box
+                    <div
                       key={a._id}
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        mb: 1,
+                      style={{
+                        ...styles.monthSummaryCard,
+                        background: a.present
+                          ? "rgba(16,185,129,0.08)"
+                          : "rgba(239,68,68,0.08)",
                       }}
                     >
-                      <Typography>{formattedDate}</Typography>
-                      <Typography>
-                        {a.present ? "Present ✅" : "Absent ❌"}
-                      </Typography>
-                    </Box>
+                      <span style={{ color: "#e5e7eb", fontWeight: 500 }}>
+                        {formattedDate}
+                      </span>
+
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color: a.present ? "#10b981" : "#ef4444",
+                        }}
+                      >
+                        {a.present ? "✔ Present" : "✖ Absent"}
+                      </span>
+                    </div>
                   );
-                })
-              )}
-            </CardContent>
-          </Card>
+                })}
+
+                {/* PAGINATION */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: 12,
+                    marginTop: 20,
+                  }}
+                >
+                  <button
+                    disabled={attendancePage === 1}
+                    onClick={() => setAttendancePage((p) => p - 1)}
+                    style={paginationBtn(attendancePage === 1)}
+                  >
+                    Prev
+                  </button>
+
+                  <span style={{ color: "#c7c9d9" }}>
+                    Page {attendancePage} of {totalPages}
+                  </span>
+
+                  <button
+                    disabled={attendancePage === totalPages}
+                    onClick={() => setAttendancePage((p) => p + 1)}
+                    style={paginationBtn(attendancePage === totalPages)}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {activeView === "Contributions" && (
@@ -532,11 +653,6 @@ const AdminDashboardContent = () => {
    STYLES
 ========================= */
 const styles = {
-  section: {
-    background: "#fff",
-    padding: "1rem",
-    borderRadius: 8,
-  },
   container: { display: "flex", minHeight: "100vh", background: "#f8fafc" },
   mobileTopBar: {
     position: "fixed",
@@ -599,23 +715,23 @@ const styles = {
     padding: "1rem",
     borderRadius: 8,
   },
-  cards: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-    gap: "1.5rem",
-    marginBottom: "2rem",
-  },
-  card: {
-    background: "linear-gradient(135deg, #232946 60%, #121629 100%)",
-    color: "#fff",
-    padding: "1.75rem 1.25rem",
-    borderRadius: 18,
-    boxShadow: "0 4px 24px rgba(35,41,70,0.10)",
-    transition: "transform 0.15s, box-shadow 0.15s",
-    cursor: "pointer",
-    position: "relative",
-    overflow: "hidden",
-  },
+  // cards: {
+  //   display: "grid",
+  //   gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+  //   gap: "1.5rem",
+  //   marginBottom: "2rem",
+  // },
+  // card: {
+  //   background: "linear-gradient(135deg, #232946 60%, #121629 100%)",
+  //   color: "#fff",
+  //   padding: "1.75rem 1.25rem",
+  //   borderRadius: 18,
+  //   boxShadow: "0 4px 24px rgba(35,41,70,0.10)",
+  //   transition: "transform 0.15s, box-shadow 0.15s",
+  //   cursor: "pointer",
+  //   position: "relative",
+  //   overflow: "hidden",
+  // },
   cardPrimary: {
     background: "linear-gradient(135deg, #232946 60%, #3e497a 100%)",
     borderLeft: "6px solid #f4d160",
@@ -681,6 +797,16 @@ const styles = {
   rate: { color: "#3b82f6", fontWeight: 500 },
   noData: { color: "#c7c9d9", fontStyle: "italic" },
 };
+
+const paginationBtn = (disabled) => ({
+  padding: "0.5rem 1rem",
+  borderRadius: 6,
+  border: "none",
+  cursor: disabled ? "not-allowed" : "pointer",
+  background: disabled ? "#334155" : "#3b82f6",
+  color: "#fff",
+  fontWeight: 600,
+});
 
 export default function AdminDashboard() {
   return (

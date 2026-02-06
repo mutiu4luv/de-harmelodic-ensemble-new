@@ -16,6 +16,10 @@ const MemberDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [attendance, setAttendance] = useState([]);
   const [totalContribution, setTotalContribution] = useState(0);
+  const ITEMS_PER_PAGE = 8;
+
+  const [attendancePage, setAttendancePage] = useState(1);
+  const [selectedMonth, setSelectedMonth] = useState("all");
 
   const API_BASE =
     import.meta.env.VITE_API_BASE || "https://harme-backend.onrender.com";
@@ -27,6 +31,33 @@ const MemberDashboard = () => {
 
     return `${Math.round((presentCount / attendance.length) * 100)}%`;
   })();
+
+  const attendanceWithMonth = attendance.map((a) => {
+    const d = new Date(a.date);
+    return {
+      ...a,
+      monthKey: d.toLocaleString("en-US", {
+        month: "long",
+        year: "numeric",
+      }),
+    };
+  });
+
+  const filteredAttendance =
+    selectedMonth === "all"
+      ? attendanceWithMonth
+      : attendanceWithMonth.filter((a) => a.monthKey === selectedMonth);
+
+  const totalPages = Math.ceil(filteredAttendance.length / ITEMS_PER_PAGE);
+
+  const paginatedAttendance = filteredAttendance.slice(
+    (attendancePage - 1) * ITEMS_PER_PAGE,
+    attendancePage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setAttendancePage(1);
+  }, [selectedMonth]);
 
   const monthlyAttendanceSummary = (() => {
     if (!attendance.length) return {};
@@ -316,40 +347,135 @@ const MemberDashboard = () => {
         )}
 
         {activeView === "Attendance" && (
-          <Card sx={{ maxWidth: 600, mx: "auto", mt: 4 }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                My Rehearsals Attendance
-              </Typography>
+          <div style={{ maxWidth: 800, margin: "0 auto" }}>
+            <h1 style={styles.title}>My Rehearsals Attendance</h1>
 
-              {attendance.length === 0 ? (
-                <Typography>No attendance records yet.</Typography>
-              ) : (
-                attendance.map((a) => {
-                  // Format date to DD/MM/YYYY
+            {/* FILTER */}
+            <div style={{ marginBottom: 16 }}>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                style={{
+                  padding: "0.6rem",
+                  borderRadius: 8,
+                  border: "1px solid #334155",
+                  background: "#0f172a",
+                  color: "#fff",
+                }}
+              >
+                <option value="all">All Months</option>
+                {Object.keys(monthlyAttendanceSummary).map((month) => (
+                  <option key={month} value={month}>
+                    {month}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {filteredAttendance.length === 0 ? (
+              <div style={styles.section}>
+                <p style={styles.noData}>No attendance records yet</p>
+              </div>
+            ) : (
+              <div style={styles.monthlySummaryWrapper}>
+                {/* MINI PROGRESS BAR */}
+                {selectedMonth !== "all" &&
+                  (() => {
+                    const m = monthlyAttendanceSummary[selectedMonth];
+                    if (!m) return null;
+
+                    const rate = Math.round((m.present / m.total) * 100);
+
+                    return (
+                      <div style={{ marginBottom: 20 }}>
+                        <div
+                          style={{
+                            height: 10,
+                            background: "#1e293b",
+                            borderRadius: 6,
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              height: "100%",
+                              width: `${rate}%`,
+                              background: "#10b981",
+                              transition: "width .3s",
+                            }}
+                          />
+                        </div>
+                        <small style={{ color: "#c7c9d9" }}>
+                          Attendance rate: {rate}%
+                        </small>
+                      </div>
+                    );
+                  })()}
+
+                {/* RECORDS */}
+                {paginatedAttendance.map((a) => {
                   const formattedDate = new Date(a.date).toLocaleDateString(
                     "en-GB"
                   );
 
                   return (
-                    <Box
+                    <div
                       key={a._id}
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        mb: 1,
+                      style={{
+                        ...styles.monthSummaryCard,
+                        background: a.present
+                          ? "rgba(16,185,129,0.08)"
+                          : "rgba(239,68,68,0.08)",
                       }}
                     >
-                      <Typography>{formattedDate}</Typography>
-                      <Typography>
-                        {a.present ? "Present ✅" : "Absent ❌"}
-                      </Typography>
-                    </Box>
+                      <span style={{ color: "#e5e7eb", fontWeight: 500 }}>
+                        {formattedDate}
+                      </span>
+
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color: a.present ? "#10b981" : "#ef4444",
+                        }}
+                      >
+                        {a.present ? "✔ Present" : "✖ Absent"}
+                      </span>
+                    </div>
                   );
-                })
-              )}
-            </CardContent>
-          </Card>
+                })}
+
+                {/* PAGINATION */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: 12,
+                    marginTop: 20,
+                  }}
+                >
+                  <button
+                    disabled={attendancePage === 1}
+                    onClick={() => setAttendancePage((p) => p - 1)}
+                    style={paginationBtn(attendancePage === 1)}
+                  >
+                    Prev
+                  </button>
+
+                  <span style={{ color: "#c7c9d9" }}>
+                    Page {attendancePage} of {totalPages}
+                  </span>
+
+                  <button
+                    disabled={attendancePage === totalPages}
+                    onClick={() => setAttendancePage((p) => p + 1)}
+                    style={paginationBtn(attendancePage === totalPages)}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </main>
 
@@ -534,20 +660,20 @@ const styles = {
 
   title: { fontSize: "1.4rem", fontWeight: 700 },
 
-  cards: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
-    gap: "1rem",
-  },
+  // cards: {
+  //   display: "grid",
+  //   gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+  //   gap: "1rem",
+  // },
 
-  card: {
-    background: "#fff",
-    padding: "1.25rem",
-    borderRadius: 12,
-  },
+  // card: {
+  //   background: "#fff",
+  //   padding: "1.25rem",
+  //   borderRadius: 12,
+  // },
 
-  cardTitle: { fontSize: "0.75rem", color: "#64748b" },
-  cardValue: { fontSize: "1.5rem", fontWeight: 700 },
+  // cardTitle: { fontSize: "0.75rem", color: "#64748b" },
+  // cardValue: { fontSize: "1.5rem", fontWeight: 700 },
 
   section: {
     background: "#fff",
@@ -587,5 +713,15 @@ const styles = {
     zIndex: 999,
   },
 };
+
+const paginationBtn = (disabled) => ({
+  padding: "0.5rem 1rem",
+  borderRadius: 6,
+  border: "none",
+  cursor: disabled ? "not-allowed" : "pointer",
+  background: disabled ? "#334155" : "#3b82f6",
+  color: "#fff",
+  fontWeight: 600,
+});
 
 export default MemberDashboard;
