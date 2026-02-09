@@ -43,6 +43,10 @@ const MemberDashboard = () => {
   const [contributionsPage, setContributionsPage] = useState(1);
   const CONTRIBUTIONS_PER_PAGE = 7;
 
+  const [page, setPage] = useState(1);
+
+  const rowsPerPage = 6;
+
   const filteredContributions =
     !loading && data && Array.isArray(data.contributions)
       ? data.contributions.filter((c) =>
@@ -165,33 +169,6 @@ const MemberDashboard = () => {
 
     return `${monthData.present}/${monthData.total}`;
   })();
-
-  // useEffect(() => {
-  //   const fetchContributions = async () => {
-  //     try {
-  //       const memberId = user?.id;
-  //       if (!memberId) return;
-
-  //       const res = await axios.get(
-  //         `${API_BASE}/api/admin/contributions/member/${memberId}`
-  //       );
-
-  //       const total = res.data.contributions.reduce(
-  //         (sum, c) => sum + c.amount,
-  //         0
-  //       );
-
-  //       setTotalContribution(total);
-  //     } catch (err) {
-  //       console.error("Failed to fetch contributions:", err);
-  //       enqueueSnackbar("Failed to fetch contributions", {
-  //         variant: "error",
-  //       });
-  //     }
-  //   };
-
-  //   fetchContributions();
-  // }, [user]);
 
   /* =========================
      RESPONSIVE HANDLING
@@ -542,25 +519,28 @@ const MemberDashboard = () => {
         )}
         {activeView === "My Contributions" && (
           <Box sx={{ p: 3 }}>
-            {/* Search */}
-            <Box sx={{ mb: 3 }}>
+            {/* ================= SEARCH ================= */}
+            <Box sx={{ mb: 2 }}>
               <TextField
                 fullWidth
-                placeholder="Search by title..."
+                placeholder="Search by title…"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
                 size="small"
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
+                }}
               />
             </Box>
 
-            {/* Loading */}
+            {/* ================= LOADING ================= */}
             {loading && (
               <Typography color="text.secondary">
                 Loading your contributions…
               </Typography>
             )}
 
-            {/* Total owed */}
+            {/* ================= TOTAL OWED ================= */}
             {!loading && data && (
               <Box sx={{ mb: 2 }}>
                 <Typography fontWeight={700}>
@@ -572,38 +552,59 @@ const MemberDashboard = () => {
               </Box>
             )}
 
-            {/* Table */}
+            {/* ================= TABLE ================= */}
             {!loading && filteredContributions.length > 0 ? (
               <>
-                <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-                  <Table>
+                <TableContainer
+                  component={Paper}
+                  sx={{
+                    borderRadius: 2,
+                    boxShadow: "0 6px 18px rgba(0,0,0,0.05)",
+                  }}
+                >
+                  <Table size="small">
                     <TableHead>
                       <TableRow sx={{ backgroundColor: "#f8fafc" }}>
-                        <TableCell>
-                          <b>Title</b>
+                        <TableCell sx={{ fontWeight: 700 }}>Title</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>
+                          Description
                         </TableCell>
-                        <TableCell>
-                          <b>Target Amount</b>
+                        <TableCell sx={{ fontWeight: 700 }}>
+                          Target (₦)
                         </TableCell>
-                        <TableCell>
-                          <b>Paid Amount</b>
+                        <TableCell sx={{ fontWeight: 700 }}>Paid (₦)</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>
+                          Remaining (₦)
                         </TableCell>
-                        <TableCell>
-                          <b>Remaining</b>
-                        </TableCell>
-                        <TableCell>
-                          <b>Status</b>
-                        </TableCell>
-                        <TableCell>
-                          <b>Paid On</b>
-                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Paid On</TableCell>
                       </TableRow>
                     </TableHead>
 
                     <TableBody>
                       {paginatedContributions.map((c) => (
-                        <TableRow key={c.contributionId} hover>
+                        <TableRow
+                          key={c.contributionId}
+                          hover
+                          sx={{
+                            "& td": {
+                              py: 1.3, // 👈 reasonable sharp spacing
+                            },
+                          }}
+                        >
                           <TableCell>{c.title}</TableCell>
+
+                          {/* DESCRIPTION */}
+                          <TableCell sx={{ maxWidth: 220 }}>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              noWrap
+                              title={c.description}
+                            >
+                              {c.description || "-"}
+                            </Typography>
+                          </TableCell>
 
                           <TableCell sx={{ color: "#3b82f6" }}>
                             ₦{c.targetAmount.toLocaleString()}
@@ -617,7 +618,6 @@ const MemberDashboard = () => {
                             ₦{c.notPaid.toLocaleString()}
                           </TableCell>
 
-                          {/* ✅ STATUS */}
                           <TableCell>
                             <Chip
                               label={c.status === "paid" ? "PAID" : "PENDING"}
@@ -638,12 +638,12 @@ const MemberDashboard = () => {
                   </Table>
                 </TableContainer>
 
-                {/* Pagination */}
+                {/* ================= PAGINATION ================= */}
                 <Stack alignItems="center" sx={{ mt: 3 }}>
                   <Pagination
-                    count={contributionsTotalPages}
-                    page={contributionsPage}
-                    onChange={(_, page) => setContributionsPage(page)}
+                    count={totalPages}
+                    page={page}
+                    onChange={(_, p) => setPage(p)}
                     color="primary"
                   />
                 </Stack>
