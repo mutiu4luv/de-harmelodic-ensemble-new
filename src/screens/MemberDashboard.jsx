@@ -1,4 +1,20 @@
-import { Box, Card, CardContent, Typography } from "@mui/material";
+import {
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  Pagination,
+  Paper,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from "@mui/material";
 import axios from "axios";
 import { enqueueSnackbar } from "notistack";
 import React, { useState, useEffect } from "react";
@@ -525,99 +541,121 @@ const MemberDashboard = () => {
           </div>
         )}
         {activeView === "My Contributions" && (
-          <div style={styles.contributionsSection}>
-            {/* <h2 style={styles.sectionTitle}>My Contributions</h2> */}
-
+          <Box sx={{ p: 3 }}>
             {/* Search */}
-            <div style={{ marginBottom: 18 }}>
-              <input
-                type="text"
+            <Box sx={{ mb: 3 }}>
+              <TextField
+                fullWidth
                 placeholder="Search by title..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={styles.searchInput}
+                size="small"
               />
-            </div>
+            </Box>
 
-            {/* Loading state */}
+            {/* Loading */}
             {loading && (
-              <p style={styles.loadingText}>Loading your contributions...</p>
+              <Typography color="text.secondary">
+                Loading your contributions…
+              </Typography>
             )}
 
-            {/* Display total owed */}
+            {/* Total owed */}
             {!loading && data && (
-              <div style={styles.totalOwed}>
-                <strong>Total Owed: </strong>
-                <span style={{ color: "#ef4444", fontWeight: 700 }}>
-                  ₦{data.totalOwed.toLocaleString()}
-                </span>
-              </div>
+              <Box sx={{ mb: 2 }}>
+                <Typography fontWeight={700}>
+                  Total Owed:{" "}
+                  <span style={{ color: "#ef4444" }}>
+                    ₦{data.totalOwed.toLocaleString()}
+                  </span>
+                </Typography>
+              </Box>
             )}
 
-            {/* Contributions table */}
+            {/* Table */}
             {!loading && filteredContributions.length > 0 ? (
-              <div style={styles.tableWrapper}>
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Title</th>
-                      <th style={styles.th}>Target Amount</th>
-                      <th style={styles.th}>Paid Amount</th>
-                      <th style={styles.th}>Remaining</th>
-                      <th style={styles.th}>Paid On</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedContributions.map((c) => (
-                      <tr key={c.contributionId} style={styles.tr}>
-                        <td style={styles.td}>{c.title}</td>
-                        <td style={{ ...styles.td, color: "#3b82f6" }}>
-                          ₦{c.targetAmount.toLocaleString()}
-                        </td>
-                        <td style={{ ...styles.td, color: "#10b981" }}>
-                          ₦{c.paidAmount.toLocaleString()}
-                        </td>
-                        <td style={{ ...styles.td, color: "#ef4444" }}>
-                          ₦{c.notPaid.toLocaleString()}
-                        </td>
-                        <td style={styles.td}>
-                          {c.paidOn
-                            ? new Date(c.paidOn).toLocaleDateString()
-                            : "-"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <>
+                <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: "#f8fafc" }}>
+                        <TableCell>
+                          <b>Title</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Target Amount</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Paid Amount</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Remaining</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Status</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>Paid On</b>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+
+                    <TableBody>
+                      {paginatedContributions.map((c) => (
+                        <TableRow key={c.contributionId} hover>
+                          <TableCell>{c.title}</TableCell>
+
+                          <TableCell sx={{ color: "#3b82f6" }}>
+                            ₦{c.targetAmount.toLocaleString()}
+                          </TableCell>
+
+                          <TableCell sx={{ color: "#10b981" }}>
+                            ₦{c.paidAmount.toLocaleString()}
+                          </TableCell>
+
+                          <TableCell sx={{ color: "#ef4444" }}>
+                            ₦{c.notPaid.toLocaleString()}
+                          </TableCell>
+
+                          {/* ✅ STATUS */}
+                          <TableCell>
+                            <Chip
+                              label={c.status === "paid" ? "PAID" : "PENDING"}
+                              color={c.status === "paid" ? "success" : "error"}
+                              size="small"
+                              sx={{ fontWeight: 600 }}
+                            />
+                          </TableCell>
+
+                          <TableCell>
+                            {c.paidOn
+                              ? new Date(c.paidOn).toLocaleDateString()
+                              : "-"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+
                 {/* Pagination */}
-                <div style={styles.paginationWrapper}>
-                  <button
-                    disabled={contributionsPage === 1}
-                    onClick={() => setContributionsPage((p) => p - 1)}
-                    style={paginationBtn(contributionsPage === 1)}
-                  >
-                    Prev
-                  </button>
-                  <span style={{ color: "#c7c9d9" }}>
-                    Page {contributionsPage} of {contributionsTotalPages}
-                  </span>
-                  <button
-                    disabled={contributionsPage === contributionsTotalPages}
-                    onClick={() => setContributionsPage((p) => p + 1)}
-                    style={paginationBtn(
-                      contributionsPage === contributionsTotalPages
-                    )}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
+                <Stack alignItems="center" sx={{ mt: 3 }}>
+                  <Pagination
+                    count={contributionsTotalPages}
+                    page={contributionsPage}
+                    onChange={(_, page) => setContributionsPage(page)}
+                    color="primary"
+                  />
+                </Stack>
+              </>
             ) : (
               !loading && (
-                <p style={styles.noData}>You have no contributions yet.</p>
+                <Typography color="text.secondary">
+                  You have no contributions yet.
+                </Typography>
               )
             )}
-          </div>
+          </Box>
         )}
       </main>
 

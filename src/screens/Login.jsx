@@ -56,9 +56,14 @@ export default function Login() {
     try {
       const res = await axios.post(`${API_BASE}/api/registrations/login`, form);
 
-      const { user } = res.data;
+      const { user, token } = res.data;
 
+      // ✅ STORE TOKEN & USER
+      localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
+
+      // ✅ SET AXIOS DEFAULT AUTH HEADER
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
       setSnackbar({
         open: true,
