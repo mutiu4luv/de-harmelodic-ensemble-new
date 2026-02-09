@@ -177,15 +177,13 @@ const AdminDashboardContent = () => {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(25);
   const [openRows, setOpenRows] = useState({});
-
   const [attendanceData, setAttendanceData] = useState([]);
   const [attendanceSearch, setAttendanceSearch] = useState("");
   const [attendancePages, setAttendancePages] = useState(0);
-  const [attendanceRowsPerPage, setAttendanceRowsPerPage] = useState(5);
+  const [attendanceRowsPerPage, setAttendanceRowsPerPage] = useState(25);
   const [attendanceMonthSelection, setAttendanceMonthSelection] = useState({});
-
   const toggleRow = (memberId) => {
     setOpenRows((prev) => ({
       ...prev,
@@ -286,7 +284,7 @@ const AdminDashboardContent = () => {
   const fetchContributions = async () => {
     try {
       const res = await axios.get(`${API_BASE}/api/admin/contributions`);
-      setContributions(res.data);
+      setContributions(res?.data);
     } catch (err) {
       console.error(err);
     }
@@ -1129,7 +1127,7 @@ const AdminDashboardContent = () => {
                     onPageChange={handleChangePage}
                     rowsPerPage={rowsPerPage}
                     onRowsPerPageChange={handleChangeRowsPerPage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[25, 50, 75]}
                   />
                 </TableContainer>
               </CardContent>
@@ -1282,7 +1280,7 @@ const AdminDashboardContent = () => {
                       );
                       setAttendancePages(0);
                     }}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[25, 50, 75]}
                   />
                 </TableContainer>
               </CardContent>
