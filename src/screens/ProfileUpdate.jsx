@@ -15,7 +15,7 @@ import axios from "axios";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE || "https://harme-backend.onrender.com";
-
+const token = localStorage.getItem("token");
 export default function ProfileUpdate() {
   const raw = JSON.parse(localStorage.getItem("user"));
 
@@ -98,7 +98,7 @@ export default function ProfileUpdate() {
       setSnackbar({
         open: true,
         severity: "success",
-        message: "Profile updated successfully 🎉",
+        message: "Profile updated successfully ",
       });
     } catch (err) {
       setSnackbar({
