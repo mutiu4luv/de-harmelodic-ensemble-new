@@ -184,12 +184,40 @@ const AdminDashboardContent = () => {
   const [attendancePages, setAttendancePages] = useState(0);
   const [attendanceRowsPerPage, setAttendanceRowsPerPage] = useState(25);
   const [attendanceMonthSelection, setAttendanceMonthSelection] = useState({});
+
   const toggleRow = (memberId) => {
     setOpenRows((prev) => ({
       ...prev,
       [memberId]: !prev[memberId],
     }));
   };
+
+  useEffect(() => {
+    if (!attendanceDate) return;
+
+    const fetchAttendance = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/admin/attendance`, {
+          params: {
+            date: attendanceDate.format("YYYY-MM-DD"),
+          },
+        });
+
+        const map = {};
+        res.data.records.forEach((r) => {
+          map[r.member] = r.present;
+        });
+
+        setAttendance(map);
+      } catch (err) {
+        console.error(err);
+        setAttendance({});
+      }
+    };
+
+    fetchAttendance();
+  }, [attendanceDate]);
+
   // Fetch attendance data
   const fetchAttendanceData = async () => {
     try {
