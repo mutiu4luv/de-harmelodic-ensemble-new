@@ -82,6 +82,7 @@ const MembersTable = ({ members, fetchMembers, updateRole }) => {
                 "Part",
                 "Email",
                 "Address",
+                "Picture",
                 "Role",
                 "Action",
               ].map((head) => (
@@ -99,6 +100,22 @@ const MembersTable = ({ members, fetchMembers, updateRole }) => {
                 <TableCell>{m.partYouSing}</TableCell>
                 <TableCell>{m.email}</TableCell>
                 <TableCell>{m.whereYouLive}</TableCell>
+                <TableCell>
+                  {m.profileImage ? (
+                    <img
+                      src={m.profileImage}
+                      alt={m.name}
+                      style={{
+                        width: 50,
+                        height: 50,
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <Typography variant="caption">No Image</Typography>
+                  )}
+                </TableCell>
                 <TableCell>
                   <TextField
                     select

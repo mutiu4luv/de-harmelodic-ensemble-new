@@ -373,7 +373,7 @@ const MemberDashboard = () => {
                       <th style={styles.th}>Phone</th>
                       <th style={styles.th}>Part</th>
                       <th style={styles.th}>Email</th>
-                      <th style={styles.th}>Parish</th>
+                      <th style={styles.th}>picture</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -383,7 +383,22 @@ const MemberDashboard = () => {
                         <td style={styles.td}>{m.phoneNumber}</td>
                         <td style={styles.td}>{m.partYouSing}</td>
                         <td style={styles.td}>{m.email}</td>
-                        <td style={styles.td}>{m.parish}</td>
+                        <td style={styles.td}>
+                          {m.profileImage ? (
+                            <img
+                              src={m.profileImage}
+                              alt={m.name}
+                              style={{
+                                width: 50,
+                                height: 50,
+                                borderRadius: "50%",
+                                objectFit: "cover",
+                              }}
+                            />
+                          ) : (
+                            <Typography variant="caption">No Image</Typography>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
