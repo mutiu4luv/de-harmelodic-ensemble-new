@@ -835,6 +835,7 @@ const AdminDashboardContent = () => {
                   fullWidth
                   sx={{ mt: 2 }}
                   value={title}
+                  required
                   onChange={(e) => setTitle(e.target.value)}
                 />
                 <TextField
@@ -852,6 +853,7 @@ const AdminDashboardContent = () => {
                   fullWidth
                   sx={{ mt: 2 }}
                   value={targetAmount}
+                  required
                   onChange={(e) => setTargetAmount(e.target.value)}
                 />
                 <Button

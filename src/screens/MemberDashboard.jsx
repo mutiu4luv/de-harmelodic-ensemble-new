@@ -84,7 +84,9 @@ const MemberDashboard = () => {
         .then((res) => {
           setData(res.data);
           setLoading(false);
+          console.log(res.data);
         })
+
         .catch((err) => {
           console.error(
             "Error fetching contributions:",

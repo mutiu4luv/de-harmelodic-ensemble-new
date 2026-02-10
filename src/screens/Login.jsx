@@ -105,7 +105,7 @@ export default function Login() {
       <Card sx={{ maxWidth: 500, width: "100%", p: 2 }}>
         <CardContent>
           <Typography variant="h4" align="center" fontWeight={800}>
-            De-Hamelodic Chorale
+            De-Harmelodic Chorale
           </Typography>
 
           <Typography variant="subtitle1" align="center" sx={{ mb: 3 }}>

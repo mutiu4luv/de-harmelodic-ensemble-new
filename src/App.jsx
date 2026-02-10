@@ -1,16 +1,15 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import LandingPage from "./component/landingPage/LandingPage";
 import RegistrationForm from "./screens/Register";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  BrowserRouter,
-} from "react-router-dom";
 import MemberDashboard from "./screens/MemberDashboard";
 import AdminScreen from "./screens/Admin";
 import Login from "./screens/Login";
+
+import ProtectedRoute from "./routes/ProtectedRoutes";
+import RoleRoute from "./routes/RoleProtectedRoute";
 
 export const ColorModeContext = React.createContext({
   toggleColorMode: () => {},
@@ -19,21 +18,18 @@ export const ColorModeContext = React.createContext({
 const App = () => {
   const [mode, setMode] = useState("light");
 
-  // Load saved theme on first render
   useEffect(() => {
     const savedMode = localStorage.getItem("themeMode");
-    if (savedMode === "dark" || savedMode === "light") {
-      setMode(savedMode);
-    }
+    if (savedMode) setMode(savedMode);
   }, []);
 
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
-        setMode((prevMode) => {
-          const newMode = prevMode === "light" ? "dark" : "light";
-          localStorage.setItem("themeMode", newMode);
-          return newMode;
+        setMode((prev) => {
+          const next = prev === "light" ? "dark" : "light";
+          localStorage.setItem("themeMode", next);
+          return next;
         });
       },
     }),
@@ -45,9 +41,9 @@ const App = () => {
       createTheme({
         palette: {
           mode,
-          ...(mode === "light"
-            ? { background: { default: "#f4f4f4" } }
-            : { background: { default: "#121212" } }),
+          background: {
+            default: mode === "light" ? "#f4f4f4" : "#121212",
+          },
         },
       }),
     [mode]
@@ -60,10 +56,30 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/signup" element={<RegistrationForm />} />
-            <Route path="/admin" element={<AdminScreen />} />
-            <Route path="/admin/member" element={<MemberDashboard />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<RegistrationForm />} />
+
+            {/* MEMBER */}
+            <Route
+              path="/admin/member"
+              element={
+                <ProtectedRoute>
+                  <MemberDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ADMIN */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute role="admin">
+                    <AdminScreen />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </BrowserRouter>
       </ThemeProvider>
