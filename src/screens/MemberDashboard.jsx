@@ -19,6 +19,7 @@ import axios from "axios";
 import { enqueueSnackbar } from "notistack";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import ProfileUpdate from "./ProfileUpdate";
 
 const MemberDashboard = () => {
   const navigate = useNavigate();
@@ -272,20 +273,24 @@ const MemberDashboard = () => {
         </div>
 
         <ul style={styles.menu}>
-          {["Dashboard", "Members", "Attendance", "My Contributions"].map(
-            (item) => (
-              <li
-                key={item}
-                onClick={() => handleNavClick(item)}
-                style={{
-                  ...styles.menuItem,
-                  ...(activeView === item ? styles.active : {}),
-                }}
-              >
-                {item}
-              </li>
-            )
-          )}
+          {[
+            "Dashboard",
+            "Members",
+            "Attendance",
+            "My Contributions",
+            "Profile",
+          ].map((item) => (
+            <li
+              key={item}
+              onClick={() => handleNavClick(item)}
+              style={{
+                ...styles.menuItem,
+                ...(activeView === item ? styles.active : {}),
+              }}
+            >
+              {item}
+            </li>
+          ))}
 
           <li onClick={handleLogout} style={styles.logout}>
             Logout
@@ -659,6 +664,8 @@ const MemberDashboard = () => {
             )}
           </Box>
         )}
+
+        {activeView === "Profile" && <ProfileUpdate />}
       </main>
 
       {/* MOBILE OVERLAY */}

@@ -29,7 +29,10 @@ import {
   Chip,
   FormControl,
   Select,
+  Backdrop,
+  CircularProgress,
 } from "@mui/material";
+
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { SnackbarProvider, useSnackbar } from "notistack";
@@ -38,6 +41,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import ProfileUpdate from "./ProfileUpdate";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE || "https://harme-backend.onrender.com";
@@ -554,6 +558,7 @@ const AdminDashboardContent = () => {
             "Contributions",
             "All contributions",
             "All Attendance",
+            "Profile",
           ].map((item) => (
             <li
               key={item}
@@ -637,7 +642,18 @@ const AdminDashboardContent = () => {
           </section>
         )}
         {activeView === "Take Attendance" && (
-          <Card sx={{ maxWidth: 600, mx: "auto" }}>
+          <Card sx={{ maxWidth: 600, mx: "auto", position: "relative" }}>
+            <Backdrop
+              sx={{
+                color: "#fff",
+                zIndex: (theme) => theme.zIndex.drawer + 1,
+                position: "absolute",
+              }}
+              open={loadingAttendance}
+            >
+              <CircularProgress color="inherit" />
+            </Backdrop>
+
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>
                 Take Attendance
@@ -678,11 +694,17 @@ const AdminDashboardContent = () => {
                 </Box>
               ))}
 
+              {/* 2. BUTTON WITH SPINNER */}
               <Button
                 fullWidth
                 variant="contained"
                 sx={{ mt: 2 }}
                 disabled={loadingAttendance}
+                startIcon={
+                  loadingAttendance ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : null
+                }
                 onClick={async () => {
                   try {
                     setLoadingAttendance(true);
@@ -1317,6 +1339,7 @@ const AdminDashboardContent = () => {
             </Card>
           </Stack>
         )}
+        {activeView === "Profile" && <ProfileUpdate />}
       </main>
     </div>
   );
