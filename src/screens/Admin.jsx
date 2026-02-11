@@ -82,6 +82,8 @@ const MembersTable = ({ members, fetchMembers, updateRole }) => {
                 "Part",
                 "Email",
                 "Address",
+                "Username",
+
                 "Picture",
                 "Role",
                 "Action",
@@ -100,6 +102,7 @@ const MembersTable = ({ members, fetchMembers, updateRole }) => {
                 <TableCell>{m.partYouSing}</TableCell>
                 <TableCell>{m.email}</TableCell>
                 <TableCell>{m.whereYouLive}</TableCell>
+                <TableCell>{m.username}</TableCell>
                 <TableCell>
                   {m.profileImage ? (
                     <img

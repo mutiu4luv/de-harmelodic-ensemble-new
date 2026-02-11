@@ -127,7 +127,6 @@ export default function RegistrationForm() {
       const res = await axios.post(`${API_BASE}/api/registrations`, form);
       const user = res.data.user;
 
-      // Save user info (usually handled by login, but useful for auto-login)
       localStorage.setItem("user", JSON.stringify(user));
 
       setSnackbar({

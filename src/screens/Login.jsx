@@ -23,7 +23,7 @@ export default function Login() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    username: "",
+    identifier: "",
     password: "",
   });
 
@@ -43,26 +43,31 @@ export default function Login() {
 
   const validate = () => {
     const e = {};
-    if (!form.username.trim()) e.username = "Username is required";
+
+    if (!form.identifier.trim()) e.identifier = "Username or Email is required";
+
     if (!form.password) e.password = "Password is required";
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleLogin = async () => {
     if (!validate()) return;
+
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API_BASE}/api/registrations/login`, form);
+      const res = await axios.post(`${API_BASE}/api/registrations/login`, {
+        identifier: form.identifier.trim(),
+        password: form.password,
+      });
 
       const { user, token } = res.data;
 
-      // ✅ STORE TOKEN & USER
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      // ✅ SET AXIOS DEFAULT AUTH HEADER
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
       setSnackbar({
@@ -71,13 +76,24 @@ export default function Login() {
         message: "Login successful 🎉",
       });
 
-      // 🔀 ROLE-BASED NAVIGATION
-      if (user.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/admin/member");
-      }
+      setTimeout(() => {
+        if (user.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/admin/member");
+        }
+      }, 800);
     } catch (err) {
+      const backendErrors = err?.response?.data?.errors;
+
+      if (backendErrors) {
+        const formattedErrors = {};
+        backendErrors.forEach((error) => {
+          formattedErrors[error.path] = error.msg;
+        });
+        setErrors(formattedErrors);
+      }
+
       setSnackbar({
         open: true,
         severity: "error",
@@ -113,13 +129,15 @@ export default function Login() {
           </Typography>
 
           <TextField
-            label="Username"
+            label="Username or Email"
             fullWidth
             margin="normal"
-            value={form.username}
-            onChange={handleChange("username")}
-            error={!!errors.username}
-            helperText={errors.username}
+            value={form.identifier}
+            onChange={handleChange("identifier")}
+            error={!!errors.identifier}
+            helperText={errors.identifier}
+            placeholder="Enter your username or email"
+            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -138,6 +156,8 @@ export default function Login() {
             onChange={handleChange("password")}
             error={!!errors.password}
             helperText={errors.password}
+            placeholder="Enter your password"
+            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -163,11 +183,9 @@ export default function Login() {
           >
             {loading ? "Logging in…" : "Login"}
           </Button>
+
           <Typography align="center" sx={{ mt: 2 }}>
-            Not registered?{" "}
-            <Link to="/signup" underline="hover">
-              Click here to sign up
-            </Link>
+            Not registered? <Link to="/signup">Click here to sign up</Link>
           </Typography>
         </CardContent>
       </Card>
@@ -177,7 +195,9 @@ export default function Login() {
         autoHideDuration={4000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
-        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
+        <Alert severity={snackbar.severity} variant="filled">
+          {snackbar.message}
+        </Alert>
       </Snackbar>
     </Box>
   );
