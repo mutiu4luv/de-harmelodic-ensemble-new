@@ -58,7 +58,6 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      // Sending ONLY the 'password' variable as requested
       await axios.post(
         `${API_BASE}/api/registrations/reset-password/${token}`,
         { password }
