@@ -174,10 +174,16 @@ export default function Login() {
             }}
           />
 
+          <Typography align="right" sx={{ mt: 1 }}>
+            <Link to="/forgot-password" style={{ fontSize: 14 }}>
+              Forgot Password?
+            </Link>
+          </Typography>
+
           <Button
             variant="contained"
             fullWidth
-            sx={{ mt: 3 }}
+            sx={{ mt: 2 }}
             onClick={handleLogin}
             disabled={loading}
           >

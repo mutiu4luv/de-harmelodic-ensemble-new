@@ -10,6 +10,8 @@ import Login from "./screens/Login";
 
 import ProtectedRoute from "./routes/ProtectedRoutes";
 import RoleRoute from "./routes/RoleProtectedRoute";
+import ForgotPassword from "./screens/ForgotPassword";
+import ResetPassword from "./screens/ResetPassword";
 
 export const ColorModeContext = React.createContext({
   toggleColorMode: () => {},
@@ -59,6 +61,8 @@ const App = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<RegistrationForm />} />
 
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
             {/* MEMBER */}
             <Route
               path="/admin/member"
