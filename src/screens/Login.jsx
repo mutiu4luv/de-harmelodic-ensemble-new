@@ -193,6 +193,10 @@ export default function Login() {
           <Typography align="center" sx={{ mt: 2 }}>
             Not registered? <Link to="/signup">Click here to sign up</Link>
           </Typography>
+
+          <Typography align="center" sx={{ mt: 1 }}>
+            Want to join the chorale? <Link to="/form">Fill the form</Link>
+          </Typography>
         </CardContent>
       </Card>
 

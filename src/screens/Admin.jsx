@@ -163,6 +163,47 @@ const MembersTable = ({ members, fetchMembers, updateRole }) => {
   );
 };
 
+const ChoirApplicationsTable = ({ applications }) => {
+  return (
+    <TableContainer component={Paper} sx={{ mt: 2, boxShadow: 3, overflowX: "auto" }}>
+      <Table size="small">
+        <TableHead sx={{ backgroundColor: "#0f172a" }}>
+          <TableRow>
+            {[
+              "Name",
+              "Residence in Owerri",
+              "Choir Part",
+              "Contact Address",
+              "Phone",
+              "Email",
+              "Submitted",
+            ].map((head) => (
+              <TableCell key={head} sx={{ color: "#fff", fontWeight: 700 }}>
+                {head}
+              </TableCell>
+            ))}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {applications.map((item) => (
+            <TableRow key={item._id} hover>
+              <TableCell>{item.name}</TableCell>
+              <TableCell>{item.placeOfResidenceInOwerri}</TableCell>
+              <TableCell>{item.partBelongInChoir}</TableCell>
+              <TableCell>{item.contactAddress}</TableCell>
+              <TableCell>{item.phoneNumber}</TableCell>
+              <TableCell>{item.emailAddress}</TableCell>
+              <TableCell>
+                {item.createdAt ? new Date(item.createdAt).toLocaleString() : "—"}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
+
 /* =========================
    DASHBOARD CONTENT
 ========================= */
@@ -177,7 +218,10 @@ const AdminDashboardContent = () => {
   const [activeView, setActiveView] = useState("Dashboard");
 
   const [members, setMembers] = useState([]);
+  const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingApplications, setLoadingApplications] = useState(true);
+  const [applicationSearch, setApplicationSearch] = useState("");
 
   const [attendance, setAttendance] = useState({});
   const [loadingAttendance, setLoadingAttendance] = useState(false);
@@ -268,6 +312,15 @@ const AdminDashboardContent = () => {
     attendancePages * attendanceRowsPerPage,
     attendancePages * attendanceRowsPerPage + attendanceRowsPerPage
   );
+
+  const filteredApplications = applications.filter((item) => {
+    const query = applicationSearch.toLowerCase();
+    return [
+      item.name,
+      item.placeOfResidenceInOwerri,
+      item.partBelongInChoir,
+    ].some((value) => value?.toLowerCase().includes(query));
+  });
 
   // Fetch all members with contributions & payments
   const fetchData = async () => {
@@ -471,8 +524,24 @@ const AdminDashboardContent = () => {
     }
   };
 
+  const fetchApplications = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/forms`);
+      setApplications(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      enqueueSnackbar("Failed to fetch choir applications", { variant: "error" });
+      setApplications([]);
+    } finally {
+      setLoadingApplications(false);
+    }
+  };
+
   useEffect(() => {
     fetchMembers();
+  }, []);
+
+  useEffect(() => {
+    fetchApplications();
   }, []);
 
   const handleLogout = () => {
@@ -577,6 +646,7 @@ const AdminDashboardContent = () => {
             "My Attendance",
             "Contributions",
             "All contributions",
+            "Form Submissions",
             "All Attendance",
             "Profile",
           ].map((item) => (
@@ -1034,6 +1104,26 @@ const AdminDashboardContent = () => {
               </Card>
             )} */}
           </Stack>
+        )}
+
+        {activeView === "Form Submissions" && (
+          <section style={styles.section}>
+            <h2>Choir Form Submissions</h2>
+            <TextField
+              label="Search by name, residence, or part"
+              fullWidth
+              sx={{ mt: 2 }}
+              value={applicationSearch}
+              onChange={(e) => setApplicationSearch(e.target.value)}
+            />
+            {loadingApplications ? (
+              <p>Loading...</p>
+            ) : filteredApplications.length === 0 ? (
+              <p style={styles.noData}>No choir submissions yet</p>
+            ) : (
+              <ChoirApplicationsTable applications={filteredApplications} />
+            )}
+          </section>
         )}
 
         {activeView === "All contributions" && (

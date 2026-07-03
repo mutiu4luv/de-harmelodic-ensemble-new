@@ -7,6 +7,7 @@ import RegistrationForm from "./screens/Register";
 import MemberDashboard from "./screens/MemberDashboard";
 import AdminScreen from "./screens/Admin";
 import Login from "./screens/Login";
+import ChoirForm from "./screens/ChoirForm";
 
 import ProtectedRoute from "./routes/ProtectedRoutes";
 import RoleRoute from "./routes/RoleProtectedRoute";
@@ -59,6 +60,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/form" element={<ChoirForm />} />
             <Route path="/signup" element={<RegistrationForm />} />
 
             <Route path="/forgot-password" element={<ForgotPassword />} />
