@@ -142,6 +142,7 @@ export default function ChoirForm() {
               <TextField
                 label="Name"
                 fullWidth
+                required
                 value={form.name}
                 onChange={handleChange("name")}
                 error={!!errors.name}
@@ -153,6 +154,7 @@ export default function ChoirForm() {
               <TextField
                 label="Place of Residence in Owerri"
                 fullWidth
+                required
                 value={form.placeOfResidenceInOwerri}
                 onChange={handleChange("placeOfResidenceInOwerri")}
                 error={!!errors.placeOfResidenceInOwerri}
@@ -164,6 +166,7 @@ export default function ChoirForm() {
               <TextField
                 label="Part belong in a choir"
                 fullWidth
+                required
                 value={form.partBelongInChoir}
                 onChange={handleChange("partBelongInChoir")}
                 error={!!errors.partBelongInChoir}
@@ -175,6 +178,7 @@ export default function ChoirForm() {
               <TextField
                 label="Contact address"
                 fullWidth
+                required
                 value={form.contactAddress}
                 onChange={handleChange("contactAddress")}
                 error={!!errors.contactAddress}
@@ -186,6 +190,7 @@ export default function ChoirForm() {
               <TextField
                 label="Phone number"
                 fullWidth
+                required
                 value={form.phoneNumber}
                 onChange={handleChange("phoneNumber")}
                 error={!!errors.phoneNumber}
@@ -198,6 +203,7 @@ export default function ChoirForm() {
                 label="Email address"
                 type="email"
                 fullWidth
+                required
                 value={form.emailAddress}
                 onChange={handleChange("emailAddress")}
                 error={!!errors.emailAddress}
