@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Box,
@@ -12,8 +12,10 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import bgImage from "../assets/background.jpeg";
+import logo from "../assets/logo.jpeg";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "https://harme-backend.onrender.com";
+const API_BASE =
+  import.meta.env.VITE_API_BASE || "https://harme-backend.onrender.com";
 
 const initialState = {
   name: "",
@@ -28,15 +30,36 @@ export default function ChoirForm() {
   const [form, setForm] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [typedTitle, setTypedTitle] = useState("");
+  const [typingDone, setTypingDone] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     severity: "success",
     message: "",
   });
 
+  const fullTitle = "De-Harmelodic Ensemble Chorale Form Intake";
+
+  useEffect(() => {
+    let index = 0;
+    const typer = setInterval(() => {
+      index += 1;
+      setTypedTitle(fullTitle.slice(0, index));
+
+      if (index >= fullTitle.length) {
+        clearInterval(typer);
+        setTypingDone(true);
+      }
+    }, 70);
+
+    return () => clearInterval(typer);
+  }, []);
+
   const handleChange = (field) => (event) => {
     const value =
-      field === "phoneNumber" ? event.target.value.replace(/\D/g, "") : event.target.value;
+      field === "phoneNumber"
+        ? event.target.value.replace(/\D/g, "")
+        : event.target.value;
 
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -52,8 +75,10 @@ export default function ChoirForm() {
     if (!form.partBelongInChoir.trim()) {
       nextErrors.partBelongInChoir = "Choir part is required";
     }
-    if (!form.contactAddress.trim()) nextErrors.contactAddress = "Contact address is required";
-    if (!form.phoneNumber.trim()) nextErrors.phoneNumber = "Phone number is required";
+    if (!form.contactAddress.trim())
+      nextErrors.contactAddress = "Contact address is required";
+    if (!form.phoneNumber.trim())
+      nextErrors.phoneNumber = "Phone number is required";
     if (form.phoneNumber.trim().length < 10) {
       nextErrors.phoneNumber = "Phone number must be at least 10 digits";
     }
@@ -121,18 +146,60 @@ export default function ChoirForm() {
           sx={{
             px: { xs: 3, sm: 4 },
             py: 3,
-            background: "linear-gradient(135deg, #0f172a 0%, #1e293b 45%, #334155 100%)",
+            background:
+              "linear-gradient(135deg, #0f172a 0%, #1e293b 45%, #334155 100%)",
             color: "#fff",
           }}
         >
-          <Typography variant="overline" sx={{ letterSpacing: 2, opacity: 0.85 }}>
-            Chorale Intake
-          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              flexWrap: { xs: "wrap", sm: "nowrap" },
+            }}
+          >
+            <Box
+              component="img"
+              src={logo}
+              alt="De-Harmelodic Ensemble Chorale logo"
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                objectFit: "cover",
+                flexShrink: 0,
+                border: "1px solid rgba(255,255,255,0.35)",
+              }}
+            />
+            <Typography
+              variant="overline"
+              sx={{
+                letterSpacing: 2,
+                opacity: 0.85,
+                whiteSpace: { xs: "normal", sm: "nowrap" },
+                fontSize: { xs: "0.72rem", sm: "0.75rem" },
+                lineHeight: 1.4,
+                display: "flex",
+                alignItems: "center",
+                gap: 0.35,
+                flexWrap: "wrap",
+                animation: typingDone ? "blinkText 4s infinite" : "none",
+                "@keyframes blinkText": {
+                  "0%, 74.999%": { opacity: 1 },
+                  "75%, 100%": { opacity: 0 },
+                },
+              }}
+            >
+              <Box component="span">{typedTitle}</Box>
+            </Typography>
+          </Box>
           <Typography variant="h4" fontWeight={900} sx={{ mt: 0.5 }}>
-            Join the Chorale Form
+            Join the Chorale By Filling The Form Below
           </Typography>
           <Typography sx={{ mt: 1, color: "rgba(255,255,255,0.82)" }}>
-            Please complete every field so the admin receives the full submission record.
+            Please complete every field so the admin receives the full
+            submission record.
           </Typography>
         </Box>
 
