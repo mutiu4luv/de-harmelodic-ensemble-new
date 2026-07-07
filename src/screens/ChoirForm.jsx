@@ -38,7 +38,7 @@ export default function ChoirForm() {
     message: "",
   });
 
-  const fullTitle = "De-Harmelodic Ensemble Chorale Form Intake";
+  const fullTitle = "De-Harmelodic Ensemble Chorale";
 
   useEffect(() => {
     let index = 0;
@@ -198,8 +198,8 @@ export default function ChoirForm() {
             Join the Chorale By Filling The Form Below
           </Typography>
           <Typography sx={{ mt: 1, color: "rgba(255,255,255,0.82)" }}>
-            Please complete every field so the admin receives the full
-            submission record.
+            Are you a lover of music? Find your voice, share your passion, and
+            create beautiful harmonies with us, join our singing group today
           </Typography>
         </Box>
 
