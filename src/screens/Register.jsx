@@ -44,6 +44,23 @@ const initialState = {
   profileImage: "",
 };
 
+const getRegistrationErrorMessage = (error) => {
+  const responseData = error?.response?.data;
+
+  if (Array.isArray(responseData?.errors) && responseData.errors.length) {
+    return responseData.errors
+      .map((validationError) => validationError?.msg)
+      .filter(Boolean)
+      .join(". ");
+  }
+
+  return (
+    responseData?.error ||
+    responseData?.message ||
+    "Unable to register right now. Please try again."
+  );
+};
+
 export default function RegistrationForm() {
   const [form, setForm] = useState(initialState);
   const [preview, setPreview] = useState(null);
@@ -147,7 +164,7 @@ export default function RegistrationForm() {
       setSnackbar({
         open: true,
         severity: "error",
-        message: err?.response?.data?.error || "Registration failed",
+        message: getRegistrationErrorMessage(err),
       });
     } finally {
       setLoading(false);
